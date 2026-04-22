@@ -1,0 +1,20 @@
+.page { display: flex; flex-direction: column; gap: 1.5rem; animation: fadeUp 0.3s ease; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+.pageHeader { display: flex; align-items: center; gap: 0.875rem; }
+.title { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: var(--text-900); }
+.sub { font-size: 0.875rem; color: var(--text-500); }
+.uploadCard { background: var(--bg-card); border-radius: var(--r-lg); padding: 1.75rem; box-shadow: var(--shadow-sm); border: 1px solid var(--border); }
+.dropZone { border: 2.5px dashed var(--border); border-radius: var(--r-lg); padding: 3rem 2rem; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; cursor: pointer; text-align: center; transition: all var(--transition-fast); }
+.dropZone:hover, .dragOver { border-color: var(--primary); background: var(--primary-light); }
+.dropTitle { font-weight: 700; font-size: 1rem; color: var(--text-900); }
+.dropSub { font-size: 0.875rem; color: var(--text-500); }
+.dropFormat { font-size: 0.78rem; color: var(--text-300); max-width: 480px; }
+.uploadingBar { display: flex; align-items: center; gap: 0.5rem; margin-top: 1rem; color: var(--primary); font-size: 0.875rem; font-weight: 600; }
+.tableWrap { background: var(--bg-card); border-radius: var(--r-lg); padding: 1.75rem; box-shadow: var(--shadow-sm); border: 1px solid var(--border); overflow-x: auto; }
+.sectionTitle { font-size: 1rem; font-weight: 700; color: var(--text-900); margin-bottom: 1.25rem; }
+.loading { color: var(--text-500); font-size: 0.9rem; }
+.table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.th { padding: 0.75rem 1rem; background: var(--bg); font-weight: 700; color: var(--text-700); text-align: left; border-bottom: 2px solid var(--border); white-space: nowrap; }
+.tr:nth-child(even) { background: var(--bg); }
+.tr:hover { background: #f0f0f0; }
+.td { padding: 0.7rem 1rem; color: var(--text-700); border-bottom: 1px solid var(--border); vertical-align: middle; }

@@ -1,0 +1,539 @@
+/* =====================================================
+   ReporteDetallePage — Vista de detalle de voucher
+   ===================================================== */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  animation: fadeUp 0.3s ease;
+}
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Header morado */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: #7c3aed;
+  border-radius: var(--r-lg);
+  padding: 1.25rem 1.75rem;
+  color: #fff;
+  flex-wrap: wrap;
+}
+.headerTitulo {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+.headerSub {
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+.btnVolver {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1.1rem;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--r-md);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  font-family: var(--font-body);
+  white-space: nowrap;
+}
+.btnVolver:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+/* Card principal */
+.card {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 1.75rem;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.cardTitulo {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-900);
+}
+
+.generadoPor {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.3rem 0.875rem;
+  background: #f3f4ff;
+  border: 1px solid #ddd6fe;
+  border-radius: var(--r-md);
+  font-size: 0.82rem;
+  color: #4c1d95;
+}
+.generadoPor span {
+  font-weight: 600;
+  color: #7c3aed;
+}
+
+.metaGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.625rem;
+  font-size: 0.85rem;
+  color: var(--text-700);
+}
+.metaGrid strong {
+  color: var(--text-900);
+}
+
+/* Grid de campos info */
+.infoGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+.span3 {
+  grid-column: 1/-1;
+}
+.infoField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.infoField label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-500);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.infoVal {
+  padding: 0.6rem 0.875rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  font-size: 0.9rem;
+  color: var(--text-900);
+  background: var(--bg);
+}
+
+/* ── Panel de edición ── */
+.editPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: #f9f5ff;
+  border: 1.5px solid #ddd6fe;
+  border-radius: var(--r-lg);
+}
+.editBloque {
+  background: var(--bg-card);
+  border: 1.5px solid;
+  border-radius: var(--r-lg);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+.editBloqueHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.editField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.editLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-700);
+}
+.editSelect {
+  width: 100%;
+  padding: 0.6rem 2.5rem 0.6rem 1rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  font-size: 0.875rem;
+  color: var(--text-900);
+  background: var(--bg);
+  appearance: none;
+  cursor: pointer;
+  outline: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  transition: border-color 0.15s;
+}
+.editSelect:focus {
+  border-color: #7c3aed;
+}
+
+.radioGroup {
+  display: flex;
+  gap: 0.625rem;
+  flex-wrap: wrap;
+}
+.radioBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 1rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: var(--font-body);
+}
+.radioBtn:hover {
+  border-color: #7c3aed;
+}
+.radioBtnActive {
+  border-color: #7c3aed;
+  background: #ede9fe;
+  color: #7c3aed;
+}
+
+.stepperRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+.stepper {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.stepLabel {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-700);
+}
+.stepCtrl {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.stepMinus {
+  width: 30px;
+  height: 30px;
+  border: 1.5px solid #fca5a5;
+  border-radius: 6px;
+  background: #fef2f2;
+  color: #dc2626;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s;
+  flex-shrink: 0;
+}
+.stepMinus:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.stepPlus {
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 6px;
+  background: #22c55e;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s;
+  flex-shrink: 0;
+}
+.stepPlus:hover {
+  background: #16a34a;
+}
+.stepVal {
+  flex: 1;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.chkRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.5rem;
+}
+.chkBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.75rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  background: #fff;
+  font-size: 0.83rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: var(--font-body);
+}
+.chkBtnActive {
+  font-weight: 600;
+}
+
+.editActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #ddd6fe;
+}
+.btnGuardar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.7rem 1.5rem;
+  background: #22c55e;
+  color: #fff;
+  border: none;
+  border-radius: var(--r-md);
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btnGuardar:hover {
+  background: #16a34a;
+}
+.btnGuardar:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+.btnCancelar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.7rem 1.25rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg-card);
+  color: var(--text-700);
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btnCancelar:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+/* ── Desglose de costos ── */
+.desglose {
+  background: #f5f3ff;
+  border: 1.5px solid #ddd6fe;
+  border-radius: var(--r-lg);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+.desgloseHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #7c3aed;
+}
+
+.svBloque {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+.svBloqueHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-900);
+}
+.svSubtotal {
+  margin-left: auto;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+.svDetalle {
+  padding-left: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.svSubHead {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-700);
+  margin-bottom: 0.125rem;
+}
+.svLinea {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  color: var(--text-700);
+  padding: 0.15rem 0;
+}
+
+.totalBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(90deg, #7c3aed, #5b21b6);
+  border-radius: var(--r-md);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+/* ── Botones de acción ── */
+.acciones {
+  display: flex;
+  gap: 0.875rem;
+  flex-wrap: wrap;
+}
+.btnEditar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.7rem 1.5rem;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: var(--r-md);
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btnEditar:hover {
+  background: #1d4ed8;
+}
+.btnDescargar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.7rem 1.5rem;
+  background: #22c55e;
+  color: #fff;
+  border: none;
+  border-radius: var(--r-md);
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btnDescargar:hover {
+  background: #16a34a;
+}
+.btnEnviar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.7rem 1.5rem;
+  background: #7c3aed;
+  color: #fff;
+  border: none;
+  border-radius: var(--r-md);
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btnEnviar:hover {
+  background: #6d28d9;
+}
+.btnEnviar:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* ── Utils ── */
+.centered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem;
+  gap: 1rem;
+}
+.errMsg {
+  font-size: 0.95rem;
+  color: var(--text-500);
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .infoGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .stepperRow {
+    grid-template-columns: 1fr;
+  }
+  .radioGroup {
+    flex-direction: column;
+  }
+  .acciones {
+    flex-direction: column;
+  }
+  .acciones button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+@media (max-width: 520px) {
+  .infoGrid {
+    grid-template-columns: 1fr;
+  }
+  .metaGrid {
+    grid-template-columns: 1fr;
+  }
+}

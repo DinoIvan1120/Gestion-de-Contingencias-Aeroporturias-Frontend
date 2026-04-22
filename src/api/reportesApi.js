@@ -1,0 +1,17 @@
+import axiosClient from "./axiosClient";
+
+const BASE = "/api/v1/reportes";
+
+const reportesApi = {
+  getAll: (params) => axiosClient.get(BASE, { params }),
+  exportarExcel: (params) =>
+    axiosClient.get(`${BASE}/excel`, { params, responseType: "blob" }),
+  getDetalle: (id) => axiosClient.get(`${BASE}/${id}`),
+  getDetalleByCorr: (correlativo) =>
+    axiosClient.get(`${BASE}/correlativo/${correlativo}`),
+  actualizarServicios: (id, body) =>
+    axiosClient.put(`${BASE}/${id}/servicios`, body),
+  regenerarPdf: (id) => axiosClient.post(`${BASE}/${id}/regenerar-pdf`),
+};
+
+export default reportesApi;

@@ -1,0 +1,359 @@
+/* =====================================================
+   AuditoriaPage — Log de Auditoría
+   ===================================================== */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  animation: fadeUp 0.3s ease;
+}
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ── Encabezado ── */
+.pageHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  flex-wrap: wrap;
+}
+.title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-900);
+}
+.sub {
+  font-size: 0.875rem;
+  color: var(--text-500);
+}
+
+.filtroToggle {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1.1rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg-card);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-700);
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.filtroToggle:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.filtroToggleActive {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  color: var(--primary);
+}
+.filtroCount {
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  border-radius: 99px;
+  padding: 1px 6px;
+}
+
+/* ── Panel de filtros ── */
+.filtrosCard {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.filtrosGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.filtroField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.filtroLabel {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-700);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.filtroInputWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.filtroIcon {
+  position: absolute;
+  left: 0.75rem;
+  color: var(--text-400);
+  pointer-events: none;
+}
+
+.filtroInput {
+  width: 100%;
+  padding: 0.6rem 0.875rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  font-size: 0.875rem;
+  color: var(--text-900);
+  background: var(--bg-card);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.filtroInputWrap .filtroInput {
+  padding-left: 2.25rem;
+}
+.filtroInput:focus {
+  border-color: var(--primary);
+}
+
+.filtroSelect {
+  width: 100%;
+  padding: 0.6rem 2.5rem 0.6rem 1rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  font-size: 0.875rem;
+  color: var(--text-900);
+  background: var(--bg-card);
+  appearance: none;
+  cursor: pointer;
+  outline: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  transition: border-color 0.15s;
+}
+.filtroSelect:focus {
+  border-color: var(--primary);
+}
+
+.filtrosActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.btnLimpiar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1.25rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg-card);
+  color: var(--text-700);
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btnLimpiar:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.btnBuscar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1.5rem;
+  border: none;
+  border-radius: var(--r-md);
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 700;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btnBuscar:hover {
+  background: #5b21b6;
+}
+
+/* ── Tabla ── */
+.tableWrap {
+  background: var(--bg-card);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1.5px solid var(--border);
+  overflow-x: auto;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+.th {
+  padding: 0.75rem 1rem;
+  background: var(--bg);
+  font-weight: 700;
+  color: var(--text-700);
+  text-align: left;
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+}
+.tr:nth-child(even) {
+  background: var(--bg);
+}
+.tr:hover {
+  background: #f5f3ff;
+}
+.td {
+  padding: 0.65rem 1rem;
+  color: var(--text-700);
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.tdDetalle {
+  padding: 0.65rem 1rem;
+  color: var(--text-600);
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+  max-width: 260px;
+}
+.detalleTxt {
+  display: block;
+  white-space: normal;
+  font-size: 0.77rem;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+/* ── Badges de la tabla ── */
+.usuarioNombre {
+  font-weight: 600;
+  color: var(--text-900);
+}
+.dash {
+  color: var(--text-300);
+}
+
+.rolBadge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: #ede9fe;
+  color: #6d28d9;
+}
+.moduloBadge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: #dbeafe;
+  color: #1e40af;
+}
+.accionBadge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 99px;
+  white-space: nowrap;
+}
+.entidad {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.entidadTipo {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-400);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.ip {
+  font-family: monospace;
+  font-size: 0.78rem;
+  color: var(--text-500);
+}
+
+/* ── Estados ── */
+.loadingRow {
+  padding: 3rem;
+  text-align: center;
+  color: var(--text-500);
+  font-size: 0.9rem;
+}
+.emptyRow {
+  padding: 3rem;
+  text-align: center;
+  color: var(--text-400);
+  font-size: 0.875rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* ── Paginación ── */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+.pageBtn {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 6px 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  color: var(--text-700);
+  transition: all 0.15s;
+}
+.pageBtn:not(:disabled):hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.pageBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.pageInfo {
+  font-size: 0.875rem;
+  color: var(--text-500);
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .filtrosGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 640px) {
+  .filtrosGrid {
+    grid-template-columns: 1fr;
+  }
+}
