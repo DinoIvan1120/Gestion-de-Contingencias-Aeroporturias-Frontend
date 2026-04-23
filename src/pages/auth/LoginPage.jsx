@@ -694,7 +694,7 @@ export default function LoginPage() {
           </div>
 
           <p className={styles.cardFooter}>
-            Desarrollado por DINO · AirportHub 2026
+            Desarrollado por DINO · Devlynk 2026
           </p>
         </div>
       </div>
