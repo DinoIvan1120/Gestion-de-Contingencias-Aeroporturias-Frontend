@@ -124,7 +124,7 @@ export default function Sidebar({ open, onClose }) {
           <div className={styles.brand}>
             <Plane size={22} color={rolColor} />
             <div>
-              <span className={styles.brandName}>Devlynk</span>
+              <span className={styles.brandName}>IntegrityFlow</span>
               <span className={styles.brandSub}>SAASA</span>
             </div>
           </div>

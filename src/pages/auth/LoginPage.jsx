@@ -189,7 +189,7 @@ export default function LoginPage() {
             </div>
             <div>
               <p className={styles.brandName}>
-                <span>SAASA</span> - Devlynk
+                <span>SAASA</span> - IntegrityFlow
               </p>
               <p className={styles.brandTagline}>Plus Ultra Airlines</p>
             </div>
@@ -694,7 +694,7 @@ export default function LoginPage() {
           </div>
 
           <p className={styles.cardFooter}>
-            Desarrollado por DINO · Devlynk 2026
+            Desarrollado por DINO · IntegrityFlow 2026
           </p>
         </div>
       </div>
