@@ -153,3 +153,10 @@ export function useReenviarPDF() {
       atencionesApi.reenviarPdf(atencionId, { correoDestino }),
   });
 }
+
+/** GET /atenciones/{id}/voucher/descargar — obtiene URL firmada para descarga */
+export function useObtenerUrlDescarga() {
+  return useMutation({
+    mutationFn: (id) => atencionesApi.obtenerUrlDescarga(id),
+  });
+}

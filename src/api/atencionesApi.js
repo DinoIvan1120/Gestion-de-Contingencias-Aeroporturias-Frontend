@@ -51,6 +51,13 @@ const atencionesApi = {
     axiosClient.post(`${BASE}/escanear-imagen`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     }),
+
+  /**
+   * ✅ NUEVO: GET /atenciones/{id}/voucher/descargar
+   * Obtiene URL firmada temporal para descargar el PDF desde S3
+   */
+  obtenerUrlDescarga: (id) =>
+    axiosClient.get(`${BASE}/${id}/voucher/descargar`),
 };
 
 export default atencionesApi;

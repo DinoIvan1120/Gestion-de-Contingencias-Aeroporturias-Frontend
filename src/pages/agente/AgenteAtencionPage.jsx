@@ -28,6 +28,7 @@ import {
   useAsignarServicios,
   useGenerarPdf,
   useGenerarYEnviarVoucher,
+  useObtenerUrlDescarga, // ← AGREGAR ESTA LÍNEA
 } from "../../hooks/useAtenciones";
 import InfoModal from "../../components/ui/InfoModal.jsx";
 import Badge from "../../components/ui/Badge.jsx";
@@ -320,6 +321,7 @@ function FormularioAtencion({ registro, onVolver }) {
   const asignarSv = useAsignarServicios();
   const genPdf = useGenerarPdf();
   const genYEnviar = useGenerarYEnviarVoucher();
+  const obtenerUrl = useObtenerUrlDescarga(); // ← AGREGAR ESTA LÍNEA
   const { data: atencionesPrev = [] } = useAtencionesRegistro(registro.id);
 
   /* ── Cámara ── */
@@ -652,10 +654,24 @@ function FormularioAtencion({ registro, onVolver }) {
     try {
       const result = await registrarPasajeros();
       if (!result) return;
+
       const { atencionIds, total } = result;
       for (const { id } of atencionIds) {
         await genYEnviar.mutateAsync({ id, correoDestino: correo });
+
+        // ✅ DESCARGAR AUTOMÁTICAMENTE (dentro del loop)
+        try {
+          const res = await obtenerUrl.mutateAsync(id);
+          const { downloadUrl } = res.data;
+          if (downloadUrl) {
+            window.open(downloadUrl, "_blank");
+          }
+        } catch (err) {
+          console.error("Error descargando PDF:", err);
+          // No bloqueante - el PDF ya fue enviado por correo
+        }
       }
+
       showModal(
         "success",
         "PDF Enviado",
@@ -667,6 +683,27 @@ function FormularioAtencion({ registro, onVolver }) {
         "error",
         "Error",
         err.response?.data?.message ?? "Error al registrar o enviar.",
+      );
+    }
+  };
+
+  /* ── Descargar PDF desde S3 ── */
+  const handleDescargarPDF = async (atencionId) => {
+    try {
+      const res = await obtenerUrl.mutateAsync(atencionId);
+      const { downloadUrl } = res.data;
+
+      if (downloadUrl) {
+        // Abrir URL firmada en nueva pestaña
+        window.open(downloadUrl, "_blank");
+      } else {
+        showModal("error", "Error", "No se pudo generar URL de descarga");
+      }
+    } catch (err) {
+      showModal(
+        "error",
+        "Error de descarga",
+        err.response?.data?.message ?? "No se pudo descargar el PDF",
       );
     }
   };
