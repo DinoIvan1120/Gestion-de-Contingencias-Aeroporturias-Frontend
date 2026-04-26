@@ -328,15 +328,22 @@ function FormularioAtencion({ registro, onVolver }) {
   const iniciarCamara = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
+        video: {
+          facingMode: "environment",
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
       });
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play();
+        // Esperar a que los metadatos estén listos antes de hacer play
+        await new Promise((resolve) => {
+          videoRef.current.onloadedmetadata = () => resolve();
+        });
+        await videoRef.current.play();
       }
       setCamOn(true);
-      // Empezar a escanear frames automáticamente
       scanLoop();
     } catch {
       showModal(
