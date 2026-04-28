@@ -693,9 +693,7 @@ export default function LoginPage() {
             )}
           </div>
 
-          <p className={styles.cardFooter}>
-            Desarrollado por DINO · IntegrityFlow 2026
-          </p>
+          <p className={styles.cardFooter}>Proyectos e Innovación - 2026</p>
         </div>
       </div>
 
