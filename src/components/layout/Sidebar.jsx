@@ -57,6 +57,15 @@ const NAV_BY_SECTION = {
     color: "var(--rol-admin)",
     items: [{ to: "/auditoria", icon: Shield, label: "Auditoría" }],
   },
+
+  // ── Sección especial: Lider visitando /admin/proveedores ──────
+  // Misma ruta, menú reducido con el color del Lider.
+  "/lider-proveedores": {
+    color: "var(--rol-lider)",
+    items: [
+      { to: "/admin/proveedores", icon: ClipboardList, label: "Proveedores" },
+    ],
+  },
 };
 
 /* Menú fijo por rol (cuando el path no coincide con ninguna sección) */
@@ -70,6 +79,10 @@ const NAV_FALLBACK = {
 
 /* Determina qué sección del menú mostrar según el path actual */
 function resolveSection(pathname, rol) {
+  // ── LIDER_SAASA en /admin/proveedores: menú reducido con su color ──
+  if (rol === "LIDER_SAASA" && pathname.startsWith("/admin/proveedores")) {
+    return NAV_BY_SECTION["/lider-proveedores"];
+  }
   // Si es admin y está en reportes o auditoría, mantener menú de admin
   if (
     rol === "ADMINISTRADOR" &&
@@ -92,7 +105,8 @@ export default function Sidebar({ open, onClose }) {
 
   // Detectar sección actual por path
   const section = resolveSection(location.pathname, rol);
-  const rolColor = section?.color ?? getRolColor(rol);
+  //const rolColor = section?.color ?? getRolColor(rol);
+  const rolColor = getRolColor(rol);
   const navItems = section?.items ?? [];
 
   // Cerrar con Escape en móvil

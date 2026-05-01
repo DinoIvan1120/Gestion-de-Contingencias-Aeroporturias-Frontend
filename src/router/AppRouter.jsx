@@ -47,14 +47,16 @@ export default function AppRouter() {
             <Route path="/lider/vuelo" element={<LiderVueloPage />} />
             {/* <Route path="/lider/recursos" element={<LiderRecursosPage />} /> */}
           </Route>
-
           <Route
-            element={<RolRoute roles={["AGENTE_SAASA", "ADMINISTRADOR"]} />}
+            element={
+              <RolRoute
+                roles={["AGENTE_SAASA", "LIDER_SAASA", "ADMINISTRADOR"]}
+              />
+            }
           >
             <Route path="/agente/atencion" element={<AgenteAtencionPage />} />
             <Route path="/agente/pdf" element={<AgentePDFPage />} />
           </Route>
-
           <Route
             element={
               <RolRoute
@@ -63,6 +65,7 @@ export default function AppRouter() {
                   "LIDER_SAASA",
                   "ADMINISTRADOR",
                   "PROVEEDOR",
+                  "AGENTE_SAASA",
                 ]}
               />
             }
@@ -73,13 +76,27 @@ export default function AppRouter() {
               element={<ReporteDetallePage />}
             />
           </Route>
-
-          <Route element={<RolRoute roles={["ADMINISTRADOR"]} />}>
+          {/* <Route element={<RolRoute roles={["ADMINISTRADOR"]} />}>
             <Route path="/admin" element={<AdminDashboardPage />} />
             <Route
               path="/admin/proveedores"
               element={<AdminProveedoresPage />}
             />
+            <Route path="/admin/usuarios" element={<AdminUsuariosPage />} />
+            <Route path="/admin/vuelos" element={<AdminVuelosPage />} />
+            <Route path="/auditoria" element={<AuditoriaPage />} />
+          </Route> */}
+          // ✅ CORRECCIÓN — separar /admin/proveedores con su propio RolRoute
+          <Route
+            element={<RolRoute roles={["ADMINISTRADOR", "LIDER_SAASA"]} />}
+          >
+            <Route
+              path="/admin/proveedores"
+              element={<AdminProveedoresPage />}
+            />
+          </Route>
+          <Route element={<RolRoute roles={["ADMINISTRADOR"]} />}>
+            <Route path="/admin" element={<AdminDashboardPage />} />
             <Route path="/admin/usuarios" element={<AdminUsuariosPage />} />
             <Route path="/admin/vuelos" element={<AdminVuelosPage />} />
             <Route path="/auditoria" element={<AuditoriaPage />} />
