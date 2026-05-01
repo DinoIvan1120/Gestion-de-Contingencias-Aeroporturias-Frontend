@@ -9,6 +9,9 @@ import {
   SlidersHorizontal,
   Search,
   X,
+  Plane,
+  Building2,
+  BadgeCheck, // ← FIX #1: imports faltaban → crash al montar
 } from "lucide-react";
 import {
   useBuscarUsuarios,
@@ -26,6 +29,52 @@ import ConfirmModal from "../../components/ui/ConfirmModal.jsx";
 import Input from "../../components/ui/Input.jsx";
 import Select from "../../components/ui/Select.jsx";
 import styles from "./AdminUsuariosPage.module.css";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NUEVO: Configuración dinámica del campo "codigoEmpleado" según el rol.
+// Cada rol tiene su propio label, placeholder, hint, ícono y validación.
+// ─────────────────────────────────────────────────────────────────────────────
+const CAMPO_POR_ROL = {
+  LINEA_AEREA: {
+    label: "Nombre de la aerolínea",
+    placeholder: "Ej: Plus Ultra Airlines",
+    // hint: "Debe coincidir exactamente con el nombre de la aerolínea en el sistema de vuelos.",
+    icon: <Plane size={14} />,
+    // NUEVO: validar que tenga al menos 3 caracteres y no sea solo números
+    validate: (val) => {
+      if (!val || val.trim().length < 3)
+        return "Ingrese el nombre completo de la aerolínea (mín. 3 caracteres)";
+      return null;
+    },
+  },
+  PROVEEDOR: {
+    label: "RUC del proveedor",
+    placeholder: "Ej: 20512345672",
+    // hint: "RUC de 11 dígitos del proveedor asociado a este usuario.",
+    icon: <Building2 size={14} />,
+    // NUEVO: validar que sea exactamente 11 dígitos numéricos (formato RUC Perú)
+    validate: (val) => {
+      if (!val) return "El RUC es obligatorio para usuarios Proveedor";
+      if (!/^\d{11}$/.test(val))
+        return "El RUC debe tener exactamente 11 dígitos numéricos";
+      return null;
+    },
+  },
+  // Roles operativos → campo estándar de código de empleado
+  default: {
+    label: "Código de empleado",
+    placeholder: "Ej: EMP-001",
+    hint: null,
+    icon: <BadgeCheck size={14} />,
+    validate: (val) => {
+      if (!val || val.trim().length === 0)
+        return "El código de empleado es requerido";
+      return null;
+    },
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 const ROL_OPTIONS = Object.values(ROLES).map((r) => ({
   value: r,
@@ -96,6 +145,11 @@ export default function AdminUsuariosPage() {
   const showModal = (type, title, message) =>
     setModal({ open: true, type, title, message });
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // NUEVO: obtener la configuración del campo según el rol actual del formulario
+  // ─────────────────────────────────────────────────────────────────────────
+  const campoConfig = CAMPO_POR_ROL[form.rol] ?? CAMPO_POR_ROL.default;
+
   // ── Handlers de filtro ─────────────────────────────────────────
   const handleFiltroChange = (e) => {
     const { name, value } = e.target;
@@ -136,15 +190,32 @@ export default function AdminUsuariosPage() {
     setFormOpen(true);
   };
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // NUEVO: handleRolChange — al cambiar el rol, limpiar codigoEmpleado
+  // para evitar que quede un valor incompatible del rol anterior.
+  // ─────────────────────────────────────────────────────────────────────────
+  const handleRolChange = (e) => {
+    setForm((f) => ({ ...f, rol: e.target.value, codigoEmpleado: "" }));
+    setErrors((er) => ({ ...er, rol: "", codigoEmpleado: "" }));
+  };
+
   const validate = () => {
     const e = {};
     if (!form.nombre) e.nombre = "Requerido";
     if (!form.apellido) e.apellido = "Requerido";
     if (!form.correo) e.correo = "Requerido";
     if (!form.documento) e.documento = "Requerido";
-    if (!form.codigoEmpleado) e.codigoEmpleado = "Requerido";
-    if (!editId && !form.password) e.password = "Requerido al crear";
+    //if (!form.codigoEmpleado) e.codigoEmpleado = "Requerido";
+
     if (!form.rol) e.rol = "Requerido";
+
+    // ── NUEVO: validación condicional según el rol ──────────────
+    // Cada rol tiene su propia función de validación en CAMPO_POR_ROL.
+    const errorCampo = campoConfig.validate(form.codigoEmpleado);
+    if (errorCampo) e.codigoEmpleado = errorCampo;
+    // ───────────────────────────────────────────────────────────
+
+    if (!editId && !form.password) e.password = "Requerido al crear";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -502,7 +573,38 @@ export default function AdminUsuariosPage() {
               placeholder="Ej: 12345678"
               required
             />
-            <Input
+
+            {/* <Select
+              label="Rol"
+              name="rol"
+              value={form.rol}
+              onChange={handleRolChange} // ← NUEVO handler que limpia codigoEmpleado
+              options={ROL_OPTIONS}
+              error={errors.rol}
+              required
+              placeholder="Seleccione rol..."
+            /> */}
+
+            <div>
+              <Input
+                label={campoConfig.label}
+                name="codigoEmpleado"
+                value={form.codigoEmpleado}
+                onChange={handleFormChange}
+                error={errors.codigoEmpleado}
+                placeholder={campoConfig.placeholder}
+                required
+              />
+              {/* FIX #4: Hint azul — solo aparece para LINEA_AEREA y PROVEEDOR */}
+              {campoConfig.hint && (
+                <div className={styles.fieldHint}>
+                  <span className={styles.hintIcon}>{campoConfig.icon}</span>
+                  <span>{campoConfig.hint}</span>
+                </div>
+              )}
+            </div>
+
+            {/* <Input
               label="Código de empleado"
               name="codigoEmpleado"
               value={form.codigoEmpleado}
@@ -510,7 +612,7 @@ export default function AdminUsuariosPage() {
               error={errors.codigoEmpleado}
               placeholder="Ej: EMP-001"
               required
-            />
+            /> */}
           </div>
 
           {/* Contraseña con ojo */}

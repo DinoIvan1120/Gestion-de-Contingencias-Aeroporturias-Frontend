@@ -5,6 +5,8 @@ import {
   Eye,
   ChevronLeft,
   ChevronRight,
+  SlidersHorizontal,
+  X,
 } from "lucide-react";
 import { useReportes, useExportarExcel } from "../../hooks/useReportes";
 import { useNavigate } from "react-router-dom";
@@ -33,6 +35,7 @@ const EMPTY_FILTROS = {
 export default function ReportesPage() {
   const [filtros, setFiltros] = useState(EMPTY_FILTROS);
   const [filtrosActivos, setFiltrosActivos] = useState(EMPTY_FILTROS);
+  const [filtrosOpen, setFiltrosOpen] = useState(false); // cerrado al entrar
   const [page, setPage] = useState(0);
   const [detalleAtencion, setDetalleAtencion] = useState(null);
   const [modal, setModal] = useState({
@@ -89,6 +92,11 @@ export default function ReportesPage() {
     setPage(0);
   };
 
+  // Badge: cuenta filtros activos (excluyendo los vacíos)
+  const filtrosActivosCount = Object.values(filtrosActivos).filter(
+    (v) => v !== "",
+  ).length;
+
   const handleExportar = async () => {
     try {
       await exportar.mutateAsync(filtrosActivos);
@@ -114,6 +122,21 @@ export default function ReportesPage() {
           </p>
         </div>
         <div className={styles.headerActions}>
+          {/* NUEVO: botón Filtro con badge de filtros activos */}
+          <button
+            className={[
+              styles.filterToggleBtn,
+              filtrosOpen ? styles.filterToggleActive : "",
+            ].join(" ")}
+            onClick={() => setFiltrosOpen((v) => !v)}
+            aria-label="Mostrar filtros"
+          >
+            <SlidersHorizontal size={16} />
+            <span>Filtro</span>
+            {filtrosActivosCount > 0 && (
+              <span className={styles.filterBadge}>{filtrosActivosCount}</span>
+            )}
+          </button>
           <Button
             onClick={handleExportar}
             loading={exportar.isPending}
@@ -126,7 +149,12 @@ export default function ReportesPage() {
       </div>
 
       {/* Filtros */}
-      <div className={styles.card}>
+      <div
+        className={[
+          styles.filterPanel,
+          filtrosOpen ? styles.filterPanelOpen : "",
+        ].join(" ")}
+      >
         <h2 className={styles.sectionTitle}>Filtros de búsqueda</h2>
         <div className={styles.filtrosGrid}>
           {[
