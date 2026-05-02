@@ -9,7 +9,7 @@ export function useAtencionesRegistro(registroId) {
   return useQuery({
     queryKey: [...KEY_ATENCIONES, "registro", registroId],
     queryFn: async () => {
-      const { data } = await registrosDiariosApi.getAtenciones(registroId);
+      const { data } = await atencionesApi.getAtenciones(registroId);
       return data.data ?? [];
     },
     enabled: !!registroId,
@@ -22,7 +22,7 @@ export function useDisponibilidad(registroId) {
   return useQuery({
     queryKey: KEY_DISP(registroId),
     queryFn: async () => {
-      const { data } = await registrosDiariosApi.getDisponibilidad(registroId);
+      const { data } = await atencionesApi.getDisponibilidad(registroId);
       return data.data;
     },
     enabled: !!registroId,

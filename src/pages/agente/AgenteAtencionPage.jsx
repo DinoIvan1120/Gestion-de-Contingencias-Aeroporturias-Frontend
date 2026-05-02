@@ -19,6 +19,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { useRegistrosHoy } from "../../hooks/useRegistrosDiarios";
+import { useWebSocket } from "../../context/WebSocketContext"; // FIX #2
 import {
   useAtencionesRegistro,
   useDisponibilidad,
@@ -222,6 +223,35 @@ function FormularioAtencion({ registro, onVolver }) {
   /* ── Disponibilidad en tiempo real ── */
   const { data: disp, refetch: refetchDisp } = useDisponibilidad(registro.id);
 
+  // TEMPORAL — para ver qué estructura devuelve el backend
+  console.log("📊 DISP DATA:", JSON.stringify(disp, null, 2));
+
+  // FIX #2: suscribir al WebSocket de disponibilidad cuando el agente selecciona un vuelo
+  const { subscribeDisponibilidad, unsubscribeDisponibilidad } =
+    useWebSocket() ?? {};
+
+  // En FormularioAtencion, reemplazar el useEffect existente del WebSocket:
+  useEffect(() => {
+    if (!registro?.id) return;
+    subscribeDisponibilidad?.(registro.id);
+    return () => unsubscribeDisponibilidad?.(registro.id);
+  }, [registro?.id, subscribeDisponibilidad, unsubscribeDisponibilidad]);
+
+  // AGREGAR este segundo useEffect como respaldo:
+  // Si el WS de /topic/atenciones llega pero /topic/disponibilidad no,
+  // forzamos un refetch de disponibilidad cada vez que se invalidan atenciones.
+  const { data: _atencionesWatch } = useAtencionesRegistro(registro.id);
+  useEffect(() => {
+    // Cada vez que cambian las atenciones del registro, refrescar disponibilidad
+    refetchDisp();
+  }, [_atencionesWatch?.length, refetchDisp]);
+
+  // useEffect(() => {
+  //   if (!registro?.id) return;
+  //   subscribeDisponibilidad?.(registro.id);
+  //   return () => unsubscribeDisponibilidad?.(registro.id);
+  // }, [registro?.id, subscribeDisponibilidad, unsubscribeDisponibilidad]);
+
   /*
    * FUENTE DE PROVEEDORES: registro.recursos (lo que el líder habilitó)
    * FUENTE DE DISPONIBILIDAD: disp (números en tiempo real)
@@ -280,12 +310,14 @@ function FormularioAtencion({ registro, onVolver }) {
   });
 
   const [transRec, setTransRec] = useState(null); // RecursoDisponibleResponse
+  const [cantTrans, setCantTrans] = useState(1); // ← AGREGAR ESTA LÍNEA
   const [tipoTrans, setTipoTrans] = useState({
     individual: false,
     grupal: false,
   });
 
   const [restRec, setRestRec] = useState(null); // RecursoDisponibleResponse
+  const [cantRest, setCantRest] = useState(1); // ← AGREGAR ESTA LÍNEA
   const [svRest, setSvRest] = useState({
     desayuno: false,
     almuerzo: false,
@@ -539,7 +571,7 @@ function FormularioAtencion({ registro, onVolver }) {
         vueloRecursoId: transRec.vueloRecursoId,
         tipoDetalle: "TRANSPORTE",
         tipoTransporte: tipoT,
-        cantidad: 1,
+        cantidad: cantTrans,
       });
     }
     if (restRec) {
@@ -549,7 +581,7 @@ function FormularioAtencion({ registro, onVolver }) {
         desayuno: svRest.desayuno,
         almuerzo: svRest.almuerzo,
         cena: svRest.cena,
-        cantidad: 1,
+        cantidad: cantRest,
       });
     }
     return lista;
@@ -590,17 +622,35 @@ function FormularioAtencion({ registro, onVolver }) {
           registroId: registro.id,
           servicios: svList,
         });
-        refetchDisp();
+        await refetchDisp();
       }
       if (atId) atencionIds.push({ id: atId, correo: px.correo });
     }
     return { atencionIds, total: validos.length };
   };
 
+  // const resetForm = () => {
+  //   setPasajeros([{ ...EMPTY_PX }]);
+  //   setPxActivo(0);
+  //   setBpTexto("");
+  // };
+
+  // ✅ AHORA — limpia también todos los servicios
   const resetForm = () => {
     setPasajeros([{ ...EMPTY_PX }]);
     setPxActivo(0);
     setBpTexto("");
+    setHotelRec(null);
+    setSimples(0);
+    setDobles(0);
+    setMatrim(0);
+    setSvHotel({ desayuno: false, almuerzo: false, snack: false, cena: false });
+    setTransRec(null);
+    setCantTrans(1);
+    setTipoTrans({ individual: false, grupal: false });
+    setRestRec(null);
+    setCantRest(1);
+    setSvRest({ desayuno: false, almuerzo: false, cena: false });
   };
 
   /* ── Botón "Generar PDF" — solo genera y sube a S3 ── */
@@ -613,6 +663,7 @@ function FormularioAtencion({ registro, onVolver }) {
       for (const { id } of atencionIds) {
         await genPdf.mutateAsync(id);
       }
+      await refetchDisp();
       showModal(
         "success",
         "PDF Generado",
@@ -684,6 +735,7 @@ function FormularioAtencion({ registro, onVolver }) {
         "PDF Enviado",
         `${total} pasajero${total !== 1 ? "s" : ""} registrado${total !== 1 ? "s" : ""}. El voucher fue enviado a ${correo}.`,
       );
+      await refetchDisp();
       resetForm();
     } catch (err) {
       showModal(
@@ -1437,6 +1489,25 @@ function FormularioAtencion({ registro, onVolver }) {
                     color="#3b82f6"
                   />
                 </div>
+                {/* FIX #3: Stepper de cantidad de pasajeros en transporte */}
+                {(tipoTrans.individual || tipoTrans.grupal) &&
+                  (() => {
+                    const d = getDispTrans(transRec);
+                    const cap =
+                      d?.capacidadDisponible ?? transRec?.capacidadTotal ?? 0;
+                    return (
+                      <Stepper
+                        label={
+                          tipoTrans.individual
+                            ? "Pasajeros individuales"
+                            : "Pasajeros grupales"
+                        }
+                        disponibles={cap}
+                        value={cantTrans}
+                        onChange={setCantTrans}
+                      />
+                    );
+                  })()}
               </div>
             )}
           </div>
@@ -1485,6 +1556,20 @@ function FormularioAtencion({ registro, onVolver }) {
                 <p className={styles.hotelDetalleTitulo}>
                   Servicios del Restaurante:
                 </p>
+                {/* FIX #4: Stepper de cubiertos */}
+                {(() => {
+                  const d = getDispRest(restRec);
+                  const cap =
+                    d?.capacidadDisponible ?? restRec?.capacidadTotal ?? 0;
+                  return (
+                    <Stepper
+                      label="Cantidad de cubiertos"
+                      disponibles={cap}
+                      value={cantRest}
+                      onChange={setCantRest}
+                    />
+                  );
+                })()}
                 <div
                   className={styles.chkGrid}
                   // style={{ gridTemplateColumns: "repeat(3,1fr)" }}

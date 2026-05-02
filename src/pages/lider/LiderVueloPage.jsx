@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Plane,
   Hotel,
@@ -226,7 +226,12 @@ export default function LiderVueloPage() {
   const [fechaReg, setFechaReg] = useState(HOY);
   const [obs, setObs] = useState("");
   const [rec, setRec] = useState(EMPTY_REC);
-  const [editId, setEditId] = useState(null); // id del registro en edición
+  const [editId, setEditId] = useState(null); // id del
+  // registro en edición
+
+  // Bandera para indicar que vueloSelId fue cambiado PROGRAMÁTICAMENTE (desde handleEditar)
+  // y no por el usuario tocando el combobox → el useEffect NO debe resetear rec/obs/editId
+  const isEditingRef = useRef(false);
   const [errors, setErrors] = useState({});
 
   const [modal, setModal] = useState({
@@ -240,8 +245,14 @@ export default function LiderVueloPage() {
   const showModal = (type, title, message) =>
     setModal({ open: true, type, title, message });
 
-  /* Al seleccionar un vuelo del combo, autocompletar y resetear recursos */
+  /* Al seleccionar un vuelo del combo, autocompletar y resetear recursos 
+  SOLO si el cambio vino del usuario (no de handleEditar*/
   useEffect(() => {
+    if (isEditingRef.current) {
+      //El cambio vino del handleEditar -> no resetear, solo limpiar la bandera
+      isEditingRef.current = false;
+      return;
+    }
     if (!vueloSelId) {
       setVueloSel(null);
       return;
@@ -312,6 +323,7 @@ export default function LiderVueloPage() {
 
   /* ── Editar un registro existente ── */
   const handleEditar = (r) => {
+    isEditingRef.current = true;
     setVueloSelId(String(r.vueloItinerario?.id ?? ""));
     setVueloSel(r.vueloItinerario);
     setFechaReg(r.fechaRegistro ?? HOY);

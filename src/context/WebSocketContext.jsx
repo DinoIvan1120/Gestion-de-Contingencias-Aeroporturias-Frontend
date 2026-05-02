@@ -1,4 +1,10 @@
-import { createContext, useContext, useEffect, useRef } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useCallback,
+} from "react";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -10,6 +16,32 @@ export function WebSocketProvider({ children }) {
   const { token } = useAuth();
   const queryClient = useQueryClient();
   const clientRef = useRef(null);
+
+  // Guarda las suscripciones activas de disponibilidad para poder limpiarlas
+  const dispSubsRef = useRef({});
+  const pendingSubsRef = useRef(new Set()); // ← FALTABA ESTA LÍNEA
+
+  const doSubscribeRef = useRef(null);
+
+  // Definir ANTES del useEffect
+  const _doSubscribe = useCallback(
+    (stompClient, registroId) => {
+      if (!registroId || dispSubsRef.current[registroId]) return;
+      const topic = `/topic/disponibilidad/${registroId}`;
+      console.log("✅ SUSCRITO a:", topic);
+      const sub = stompClient.subscribe(topic, () => {
+        console.log("📡 DISPONIBILIDAD actualizada para registro:", registroId);
+        queryClient.invalidateQueries({
+          queryKey: ["disponibilidad", registroId],
+        });
+      });
+      dispSubsRef.current[registroId] = sub;
+    },
+    [queryClient],
+  );
+
+  // Mantener ref actualizada siempre
+  doSubscribeRef.current = _doSubscribe;
 
   useEffect(() => {
     if (!token) return;
@@ -50,7 +82,15 @@ export function WebSocketProvider({ children }) {
               /* ignorar mensajes malformados */
             }
           });
+
+          // Procesar suscripciones pendientes que llegaron antes de conectar
+          // ✅ CORRECTO — lee la función actualizada via ref
+          pendingSubsRef.current.forEach((registroId) => {
+            doSubscribeRef.current?.(client, registroId);
+          });
+          pendingSubsRef.current.clear();
         },
+
         onStompError: () => {
           /* silenciar — no crash */
         },
@@ -73,8 +113,88 @@ export function WebSocketProvider({ children }) {
     };
   }, [token, queryClient]);
 
+  /**
+   * FIX #2: subscribeDisponibilidad
+   * Suscribe al topic /topic/disponibilidad/{registroId} y cuando llega
+   * un mensaje invalida la query ["disponibilidad", registroId] para que
+   * useDisponibilidad() refetch automáticamente con los datos actualizados.
+   *
+   * Uso en AgenteAtencionPage:
+   *   const { subscribeDisponibilidad, unsubscribeDisponibilidad } = useWebSocket();
+   *   useEffect(() => {
+   *     subscribeDisponibilidad(registro.id);
+   *     return () => unsubscribeDisponibilidad(registro.id);
+   *   }, [registro.id]);
+   */
+
+  // Función interna que hace la suscripción real (requiere cliente ya conectado)
+
+  // const subscribeDisponibilidad = useCallback(
+  //   (registroId) => {
+  //     if (!clientRef.current?.connected || !registroId) return;
+
+  //     if (dispSubsRef.current[registroId]) return;
+
+  //     const topic = `/topic/disponibilidad/${registroId}`;
+  //     const sub = clientRef.current.subscribe(topic, () => {
+
+  //       queryClient.invalidateQueries({
+  //         queryKey: ["disponibilidad", registroId],
+  //       });
+  //     });
+  //     dispSubsRef.current[registroId] = sub;
+  //   },
+  //   [queryClient],
+  // );
+
+  const subscribeDisponibilidad = useCallback(
+    (registroId) => {
+      if (!registroId) return;
+      const client = clientRef.current;
+      if (client?.connected) {
+        // Cliente ya conectado: suscribir de inmediato
+        _doSubscribe(client, registroId);
+      } else {
+        // Cliente aún conectándose: encolar para cuando llegue onConnect
+        pendingSubsRef.current.add(registroId);
+      }
+    },
+    [_doSubscribe],
+  );
+
+  // const unsubscribeDisponibilidad = useCallback((registroId) => {
+  //   const sub = dispSubsRef.current[registroId];
+  //   if (sub) {
+  //     try {
+  //       sub.unsubscribe();
+  //     } catch {
+
+  //     }
+  //     delete dispSubsRef.current[registroId];
+  //   }
+  // }, []);
+
+  const unsubscribeDisponibilidad = useCallback((registroId) => {
+    pendingSubsRef.current.delete(registroId);
+    const sub = dispSubsRef.current[registroId];
+    if (sub) {
+      try {
+        sub.unsubscribe();
+      } catch {
+        /* ignorar */
+      }
+      delete dispSubsRef.current[registroId];
+    }
+  }, []);
+
   return (
-    <WebSocketContext.Provider value={{ client: clientRef.current }}>
+    <WebSocketContext.Provider
+      value={{
+        client: clientRef.current,
+        subscribeDisponibilidad,
+        unsubscribeDisponibilidad,
+      }}
+    >
       {children}
     </WebSocketContext.Provider>
   );

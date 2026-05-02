@@ -58,6 +58,16 @@ const atencionesApi = {
    */
   obtenerUrlDescarga: (id) =>
     axiosClient.get(`${BASE}/${id}/voucher/descargar`),
+
+  // Agregar al final del objeto atencionesApi, antes del cierre };
+
+  /** GET /registros-diarios/{id}/atenciones */
+  getAtenciones: (registroId) =>
+    axiosClient.get(`/api/v1/registros-diarios/${registroId}/atenciones`),
+
+  /** GET /registros-diarios/{id}/disponibilidad */
+  getDisponibilidad: (registroId) =>
+    axiosClient.get(`/api/v1/registros-diarios/${registroId}/disponibilidad`),
 };
 
 export default atencionesApi;
