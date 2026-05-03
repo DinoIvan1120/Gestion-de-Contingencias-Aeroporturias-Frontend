@@ -1147,9 +1147,30 @@ function FormularioAtencion({ registro, onVolver }) {
                   muted
                 />
                 <canvas ref={canvasRef} style={{ display: "none" }} />
+
+                {/* ← AGREGAR ESTO */}
+                <div className={styles.camControls}>
+                  <button
+                    className={styles.camCaptureBtn}
+                    onClick={tomarFoto}
+                    disabled={bpScanning}
+                  >
+                    {bpScanning ? (
+                      <>
+                        <Spinner size="sm" /> Procesando...
+                      </>
+                    ) : (
+                      <>
+                        <Camera size={18} /> Capturar y Leer Código
+                      </>
+                    )}
+                  </button>
+                </div>
+                {/* ← HASTA AQUÍ */}
+
                 <p className={styles.camTip}>
-                  Apunta la cámara al código de barras del boarding pass. Se
-                  detectará automáticamente.
+                  Encuadra el código de barras y presiona "Capturar y Leer
+                  Código"
                 </p>
               </div>
             )}
