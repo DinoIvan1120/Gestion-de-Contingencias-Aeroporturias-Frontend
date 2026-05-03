@@ -396,53 +396,40 @@ function FormularioAtencion({ registro, onVolver }) {
   const { data: atencionesPrev = [] } = useAtencionesRegistro(registro.id);
 
   /* ── Cámara ── */
+  // ═══════════════════════════════════════════════════════════════════
+  // FIX CÁMARA NEGRA — ROOT CAUSE:
+  // El <video> se renderiza condicionalmente con {camOn && <video/>}.
+  // Cuando iniciarCamara corría, camOn=false → videoRef.current=NULL
+  // → srcObject nunca se asignaba → pantalla negra.
+  //
+  // SOLUCIÓN: useEffect que asigna srcObject DESPUÉS de que React
+  // renderice el <video> (cuando camOn pasa a true).
+  // ═══════════════════════════════════════════════════════════════════
+  useEffect(() => {
+    if (!camOn) return;
+    if (!videoRef.current) return;
+    if (!streamRef.current) return;
+    const video = videoRef.current;
+    // Si srcObject ya es el stream correcto, no reasignar
+    if (video.srcObject === streamRef.current) return;
+    video.srcObject = streamRef.current;
+    video.play().catch(() => {
+      // AbortError esperado en algunos navegadores móviles — el video
+      // se reproduce igual gracias al atributo autoPlay del elemento
+    });
+  }, [camOn]);
+
   const iniciarCamara = async () => {
     try {
-      // FIX móvil: sin width/height constraints — dejar que el dispositivo elija
-      // la resolución óptima. En Android, forzar resolución puede bloquear el stream.
-      const constraints = {
-        video: {
-          facingMode: { ideal: "environment" }, // ideal en lugar de exact — más compatible
-        },
-      };
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      // Sin width/height constraints — Android elige la resolución óptima
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" } },
+      });
       streamRef.current = stream;
-
-      if (videoRef.current) {
-        const video = videoRef.current;
-        video.srcObject = stream;
-
-        // FIX móvil: esperar con timeout — onloadedmetadata puede no disparar
-        // en algunos Android si el stream ya llegó antes de asignar el handler.
-        await new Promise((resolve) => {
-          if (video.readyState >= 1) {
-            // Stream ya tiene metadatos — resolver inmediatamente
-            resolve();
-          } else {
-            const onReady = () => {
-              video.removeEventListener("loadedmetadata", onReady);
-              resolve();
-            };
-            video.addEventListener("loadedmetadata", onReady);
-            // Timeout de seguridad: si el evento no llega en 3s, continuar igual
-            setTimeout(resolve, 3000);
-          }
-        });
-
-        // FIX móvil: play() puede lanzar excepción si el elemento no está visible
-        // En Android, a veces el elemento está oculto por React durante el primer render
-        try {
-          await video.play();
-        } catch (playErr) {
-          // Si play() falla pero el stream existe, continuar igualmente
-          // (el video puede reproducirse solo en algunos navegadores móviles)
-          if (!streamRef.current) return;
-        }
-      }
+      // setCamOn(true) → React renderiza <video> → useEffect asigna srcObject → play()
       setCamOn(true);
       scanLoop();
     } catch (err) {
-      // Distinguir entre permiso denegado y error genérico
       const esPermisoDenegado =
         err?.name === "NotAllowedError" ||
         err?.name === "PermissionDeniedError";
