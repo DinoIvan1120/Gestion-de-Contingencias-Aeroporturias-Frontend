@@ -396,6 +396,58 @@ function FormularioAtencion({ registro, onVolver }) {
   const { data: atencionesPrev = [] } = useAtencionesRegistro(registro.id);
 
   /* ── Cámara ── */
+  const detenerCamara = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+    setCamOn(false);
+  }, []);
+
+  const scanLoop = useCallback(async () => {
+    // FIX: si el video no está en el DOM todavía (React no terminó de renderizar)
+    // o si el stream ya no existe, reprogramar en lugar de retornar sin reschedule
+    if (!streamRef.current) return; // stream detenido → salir definitivamente
+
+    if (!videoRef.current) {
+      setTimeout(scanLoop, 100); // video aún no montado → esperar
+      return;
+    }
+
+    const canvas = canvasRef.current;
+    if (
+      !canvas ||
+      !videoRef.current.videoWidth ||
+      videoRef.current.readyState < 2
+    ) {
+      // video no tiene dimensiones o no está listo — esperar
+      setTimeout(scanLoop, 150);
+      return;
+    }
+
+    // Capturar frame
+    try {
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+      canvas.getContext("2d").drawImage(videoRef.current, 0, 0);
+      const bm = await createImageBitmap(canvas);
+      const codigo = await leerCodigoDeImagen(bm);
+      if (codigo) {
+        setBpTexto(codigo);
+        detenerCamara();
+        showModal(
+          "success",
+          "Código detectado",
+          'Haz clic en "Procesar boarding pass" para continuar.',
+        );
+      } else if (streamRef.current) {
+        setTimeout(scanLoop, 400); // no detectado → siguiente frame
+      }
+    } catch {
+      if (streamRef.current) setTimeout(scanLoop, 400);
+    }
+  }, [detenerCamara]);
+
   // ═══════════════════════════════════════════════════════════════════
   // FIX CÁMARA NEGRA — ROOT CAUSE:
   // El <video> se renderiza condicionalmente con {camOn && <video/>}.
@@ -414,10 +466,12 @@ function FormularioAtencion({ registro, onVolver }) {
     if (video.srcObject === streamRef.current) return;
     video.srcObject = streamRef.current;
     video.play().catch(() => {
-      // AbortError esperado en algunos navegadores móviles — el video
-      // se reproduce igual gracias al atributo autoPlay del elemento
+      // AbortError esperado en algunos navegadores móviles
     });
-  }, [camOn]);
+    // FIX: iniciar scanLoop AQUÍ, después de que el video está en el DOM
+    // (antes se llamaba desde iniciarCamara cuando el video aún no existía)
+    scanLoop();
+  }, [camOn, scanLoop]);
 
   const iniciarCamara = async () => {
     try {
@@ -428,7 +482,8 @@ function FormularioAtencion({ registro, onVolver }) {
       streamRef.current = stream;
       // setCamOn(true) → React renderiza <video> → useEffect asigna srcObject → play()
       setCamOn(true);
-      scanLoop();
+      // scanLoop se inicia desde useEffect([camOn]) después de que
+      // React monte el <video> y useEffect asigne srcObject
     } catch (err) {
       const esPermisoDenegado =
         err?.name === "NotAllowedError" ||
@@ -442,39 +497,6 @@ function FormularioAtencion({ registro, onVolver }) {
       );
     }
   };
-
-  const detenerCamara = useCallback(() => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
-    }
-    setCamOn(false);
-  }, []);
-
-  const scanLoop = useCallback(async () => {
-    if (!videoRef.current || !streamRef.current) return;
-    const canvas = canvasRef.current;
-    if (!canvas || !videoRef.current.videoWidth) {
-      setTimeout(scanLoop, 300);
-      return;
-    }
-    canvas.width = videoRef.current.videoWidth;
-    canvas.height = videoRef.current.videoHeight;
-    canvas.getContext("2d").drawImage(videoRef.current, 0, 0);
-    const bm = await createImageBitmap(canvas);
-    const codigo = await leerCodigoDeImagen(bm);
-    if (codigo) {
-      setBpTexto(codigo);
-      detenerCamara();
-      showModal(
-        "success",
-        "Código detectado",
-        'Haz clic en "Escanear" para procesar el boarding pass.',
-      );
-    } else if (streamRef.current) {
-      setTimeout(scanLoop, 500);
-    }
-  }, [detenerCamara]);
 
   useEffect(() => {
     return () => detenerCamara();
