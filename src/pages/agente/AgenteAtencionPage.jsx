@@ -404,49 +404,71 @@ function FormularioAtencion({ registro, onVolver }) {
     setCamOn(false);
   }, []);
 
-  const scanLoop = useCallback(async () => {
-    // FIX: si el video no está en el DOM todavía (React no terminó de renderizar)
-    // o si el stream ya no existe, reprogramar en lugar de retornar sin reschedule
-    if (!streamRef.current) return; // stream detenido → salir definitivamente
-
-    if (!videoRef.current) {
-      setTimeout(scanLoop, 100); // video aún no montado → esperar
+  /**
+   * Captura el frame actual del video y lo envía al backend (ZXing).
+   * Más confiable que BarcodeDetector: ZXing soporta PDF417 en todas las plataformas.
+   */
+  const tomarFoto = useCallback(async () => {
+    if (!videoRef.current || !streamRef.current) return;
+    if (videoRef.current.readyState < 2) {
+      showModal(
+        "error",
+        "Cámara no lista",
+        "Espera a que la cámara se estabilice e intenta de nuevo.",
+      );
       return;
     }
-
     const canvas = canvasRef.current;
-    if (
-      !canvas ||
-      !videoRef.current.videoWidth ||
-      videoRef.current.readyState < 2
-    ) {
-      // video no tiene dimensiones o no está listo — esperar
-      setTimeout(scanLoop, 150);
-      return;
-    }
+    if (!canvas) return;
 
-    // Capturar frame
+    setBpScanning(true);
     try {
       canvas.width = videoRef.current.videoWidth;
       canvas.height = videoRef.current.videoHeight;
       canvas.getContext("2d").drawImage(videoRef.current, 0, 0);
-      const bm = await createImageBitmap(canvas);
-      const codigo = await leerCodigoDeImagen(bm);
-      if (codigo) {
-        setBpTexto(codigo);
-        detenerCamara();
-        showModal(
-          "success",
-          "Código detectado",
-          'Haz clic en "Procesar boarding pass" para continuar.',
-        );
-      } else if (streamRef.current) {
-        setTimeout(scanLoop, 400); // no detectado → siguiente frame
-      }
-    } catch {
-      if (streamRef.current) setTimeout(scanLoop, 400);
+
+      const blob = await new Promise((res) =>
+        canvas.toBlob(res, "image/jpeg", 0.92),
+      );
+      if (!blob) throw new Error("No se pudo capturar el frame");
+
+      const formData = new FormData();
+      formData.append("imagen", blob, "boarding-pass-cam.jpg");
+
+      const res = await escanearImg.mutateAsync(formData);
+      const bp = res.data.data;
+      const partes = (bp.nombreCompleto ?? "").split("/");
+      const apellido = partes[0]?.trim().toUpperCase() ?? "";
+      const nombre = partes[1]?.trim().toUpperCase() ?? "";
+
+      setPasajeros((prev) => {
+        const copy = [...prev];
+        copy[pxActivo] = {
+          ...copy[pxActivo],
+          nombre,
+          apellido,
+          pnr: bp.pnr ?? "",
+        };
+        return copy;
+      });
+
+      detenerCamara();
+      showModal(
+        "success",
+        "Boarding pass leído",
+        `${bp.nombreCompleto} · PNR: ${bp.pnr}`,
+      );
+    } catch (err) {
+      showModal(
+        "error",
+        "No se pudo leer el código",
+        err.response?.data?.message ??
+          "No se detectó el código. Asegúrate que el código de barras esté enfocado y vuelve a intentarlo.",
+      );
+    } finally {
+      setBpScanning(false);
     }
-  }, [detenerCamara]);
+  }, [detenerCamara, escanearImg, pxActivo]);
 
   // ═══════════════════════════════════════════════════════════════════
   // FIX CÁMARA NEGRA — ROOT CAUSE:
@@ -462,16 +484,12 @@ function FormularioAtencion({ registro, onVolver }) {
     if (!videoRef.current) return;
     if (!streamRef.current) return;
     const video = videoRef.current;
-    // Si srcObject ya es el stream correcto, no reasignar
     if (video.srcObject === streamRef.current) return;
     video.srcObject = streamRef.current;
     video.play().catch(() => {
-      // AbortError esperado en algunos navegadores móviles
+      /* AbortError esperado en móviles */
     });
-    // FIX: iniciar scanLoop AQUÍ, después de que el video está en el DOM
-    // (antes se llamaba desde iniciarCamara cuando el video aún no existía)
-    scanLoop();
-  }, [camOn, scanLoop]);
+  }, [camOn]);
 
   const iniciarCamara = async () => {
     try {
