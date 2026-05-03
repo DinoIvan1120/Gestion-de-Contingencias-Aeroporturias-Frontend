@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useParams } from "react-router-dom";
 import PrivateRoute from "./PrivateRoute.jsx";
 import RolRoute from "./RolRoute.jsx";
 import AppLayout from "../components/layout/AppLayout.jsx";
@@ -22,6 +22,35 @@ import AdminVuelosPage from "../pages/admin/AdminVuelosPage.jsx";
 import AuditoriaPage from "../pages/auditoria/AuditoriaPage.jsx";
 import NotFoundPage from "../pages/NotFoundPage.jsx";
 import ReporteDetallePage from "../pages/reportes/ReporteDetallePage.jsx";
+
+/**
+ * Matriz de acceso — Roles_y_módulos_v1.1.xlsx
+ *
+ *  Módulo                  Admin  Líder  Agente  Aerolínea  Proveedor
+ *  ─────────────────────────────────────────────────────────────────
+ *  Registro de Vuelo       ✓      ✓      —       —          —
+ *  Registro de Comp.       ✓      ✓      ✓       —          —
+ *  Gestión de Reportes     ✓      ✓      ✓       ✓          ✓
+ *  Gestión de Proveedores  ✓      ✓      —       —          —
+ *  Gestión de Usuarios     ✓      —      —       —          —
+ *  Auditoría               ✓      ✓      —       —          —
+ */
+
+/**
+ * FIX 3: DetalleWrapper con key={id}
+ *
+ * Cuando React Router re-usa el mismo componente para rutas con el mismo
+ * path pattern (/reportes/detalle/:id), el componente NO se desmonta al
+ * cambiar el :id → el estado local (editMode, modal, etc.) queda del registro anterior.
+ *
+ * Solucionar poniendo key={id} fuerza a React a desmontar y remontar el
+ * componente completo cada vez que cambia el correlativo → estado limpio siempre.
+ */
+
+function DetalleWrapper() {
+  const { id } = useParams();
+  return <ReporteDetallePage key={id} />;
+}
 
 export default function AppRouter() {
   return (
@@ -71,10 +100,7 @@ export default function AppRouter() {
             }
           >
             <Route path="/reportes" element={<ReportesPage />} />
-            <Route
-              path="/reportes/detalle/:id"
-              element={<ReporteDetallePage />}
-            />
+            <Route path="/reportes/detalle/:id" element={<DetalleWrapper />} />
           </Route>
           {/* <Route element={<RolRoute roles={["ADMINISTRADOR"]} />}>
             <Route path="/admin" element={<AdminDashboardPage />} />
@@ -86,7 +112,7 @@ export default function AppRouter() {
             <Route path="/admin/vuelos" element={<AdminVuelosPage />} />
             <Route path="/auditoria" element={<AuditoriaPage />} />
           </Route> */}
-          // ✅ CORRECCIÓN — separar /admin/proveedores con su propio RolRoute
+          {/* ✅ CORRECCIÓN — separar /admin/proveedores con su propio RolRoute */}
           <Route
             element={<RolRoute roles={["ADMINISTRADOR", "LIDER_SAASA"]} />}
           >

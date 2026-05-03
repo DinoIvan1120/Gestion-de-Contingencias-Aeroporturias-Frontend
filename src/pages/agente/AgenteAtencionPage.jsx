@@ -292,6 +292,7 @@ function FormularioAtencion({ registro, onVolver }) {
   const [bpScanning, setBpScanning] = useState(false);
 
   const [modoManual, setModoManual] = useState(false);
+  const [syncing, setSyncing] = useState(false); // estado del botón sincronizar
 
   /* ── Pasajeros ── */
   const [pasajeros, setPasajeros] = useState([{ ...EMPTY_PX }]);
@@ -338,6 +339,44 @@ function FormularioAtencion({ registro, onVolver }) {
   const showModal = (type, title, msg) =>
     setModal({ open: true, type, title, message: msg });
 
+  /* ── Sincronizar disponibilidad manualmente ── */
+  const handleSync = async () => {
+    setSyncing(true);
+    try {
+      const result = await refetchDisp();
+      const data = result?.data;
+      const hoteles = data?.hoteles ?? [];
+      const transportes = data?.transportes ?? [];
+      const restaurantes = data?.restaurantes ?? [];
+      const resumen = [
+        hoteles.length > 0
+          ? `🏨 ${hoteles[0].proveedorNombre}: ${hoteles[0].totalDisponibles}/${hoteles[0].totalHabitaciones} hab.`
+          : null,
+        transportes.length > 0
+          ? `🚌 ${transportes[0].proveedorNombre}: ${transportes[0].capacidadDisponible}/${transportes[0].capacidadTotal} pax`
+          : null,
+        restaurantes.length > 0
+          ? `🍽️ ${restaurantes[0].proveedorNombre}: ${restaurantes[0].capacidadDisponible}/${restaurantes[0].capacidadTotal} cubiertos`
+          : null,
+      ]
+        .filter(Boolean)
+        .join("\n");
+      showModal(
+        "success",
+        "Sincronización exitosa",
+        resumen || "Disponibilidad actualizada correctamente.",
+      );
+    } catch {
+      showModal(
+        "error",
+        "Error de sincronización",
+        "No se pudo obtener la disponibilidad. Verifica que el backend esté activo y vuelve a intentarlo.",
+      );
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   /* ── Modal de correo para "Generar y Enviar" ── */
   const [emailModal, setEmailModal] = useState({
     open: false,
@@ -359,29 +398,60 @@ function FormularioAtencion({ registro, onVolver }) {
   /* ── Cámara ── */
   const iniciarCamara = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
+      // FIX móvil: sin width/height constraints — dejar que el dispositivo elija
+      // la resolución óptima. En Android, forzar resolución puede bloquear el stream.
+      const constraints = {
         video: {
-          facingMode: "environment",
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
+          facingMode: { ideal: "environment" }, // ideal en lugar de exact — más compatible
         },
-      });
+      };
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
       streamRef.current = stream;
+
       if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        // Esperar a que los metadatos estén listos antes de hacer play
+        const video = videoRef.current;
+        video.srcObject = stream;
+
+        // FIX móvil: esperar con timeout — onloadedmetadata puede no disparar
+        // en algunos Android si el stream ya llegó antes de asignar el handler.
         await new Promise((resolve) => {
-          videoRef.current.onloadedmetadata = () => resolve();
+          if (video.readyState >= 1) {
+            // Stream ya tiene metadatos — resolver inmediatamente
+            resolve();
+          } else {
+            const onReady = () => {
+              video.removeEventListener("loadedmetadata", onReady);
+              resolve();
+            };
+            video.addEventListener("loadedmetadata", onReady);
+            // Timeout de seguridad: si el evento no llega en 3s, continuar igual
+            setTimeout(resolve, 3000);
+          }
         });
-        await videoRef.current.play();
+
+        // FIX móvil: play() puede lanzar excepción si el elemento no está visible
+        // En Android, a veces el elemento está oculto por React durante el primer render
+        try {
+          await video.play();
+        } catch (playErr) {
+          // Si play() falla pero el stream existe, continuar igualmente
+          // (el video puede reproducirse solo en algunos navegadores móviles)
+          if (!streamRef.current) return;
+        }
       }
       setCamOn(true);
       scanLoop();
-    } catch {
+    } catch (err) {
+      // Distinguir entre permiso denegado y error genérico
+      const esPermisoDenegado =
+        err?.name === "NotAllowedError" ||
+        err?.name === "PermissionDeniedError";
       showModal(
         "error",
-        "Cámara no disponible",
-        'No se pudo acceder a la cámara. Usa "Subir Imagen" o ingresa el código manualmente.',
+        esPermisoDenegado ? "Permiso denegado" : "Cámara no disponible",
+        esPermisoDenegado
+          ? "Activa el permiso de cámara en la configuración del navegador e intenta de nuevo."
+          : 'No se pudo acceder a la cámara. Usa "Subir Imagen" o ingresa el código manualmente.',
       );
     }
   };
@@ -841,11 +911,19 @@ function FormularioAtencion({ registro, onVolver }) {
           <Hotel size={16} /> Recursos Disponibles para Hoy
           <button
             className={styles.refetchBtn}
+            onClick={handleSync}
+            title="Sincronizar disponibilidad"
+            disabled={syncing}
+          >
+            <RefreshCw size={13} className={syncing ? styles.spinning : ""} />
+          </button>
+          {/* <button
+            className={styles.refetchBtn}
             onClick={() => refetchDisp()}
             title="Actualizar"
           >
             <RefreshCw size={13} />
-          </button>
+          </button> */}
         </div>
         <div className={styles.rcGrid}>
           {/* Hoteles */}

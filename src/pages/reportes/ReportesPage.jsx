@@ -362,7 +362,8 @@ export default function ReportesPage() {
                     <button
                       className={styles.detailBtn}
                       onClick={() =>
-                        navigate(`/reportes/detalle/${a.atencionId ?? i + 1}`)
+                        // navigate(`/reportes/detalle/${a.atencionId ?? i + 1}`)
+                        navigate(`/reportes/detalle/${a.correlativo}`)
                       }
                       aria-label="Ver detalle"
                     >

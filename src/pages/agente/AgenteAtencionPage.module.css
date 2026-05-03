@@ -258,9 +258,14 @@
 }
 .camVideo {
   width: 100%;
-  max-height: 260px;
+  max-height: 320px; /* un poco más alto en móvil */
+  min-height: 200px; /* FIX: altura mínima para que el video sea visible en móvil */
   display: block;
   object-fit: cover;
+  background: #111; /* fondo oscuro mientras carga */
+  /* FIX móvil: transform fuerza GPU compositing — evita frame negro en Chrome Android */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
 }
 .camTip {
   font-size: 0.78rem;
@@ -1170,4 +1175,21 @@
     flex-direction: column;
     align-items: flex-start;
   }
+}
+
+/* ── Animación del botón de sincronización ── */
+.refetchBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spinning {
+  animation: spin 0.8s linear infinite;
 }
