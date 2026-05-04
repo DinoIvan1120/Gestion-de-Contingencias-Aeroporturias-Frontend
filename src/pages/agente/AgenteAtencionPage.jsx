@@ -285,6 +285,7 @@ function FormularioAtencion({ registro, onVolver }) {
 
   /* ── Escáner ── */
   const videoRef = useRef(null);
+  const scanningRef = useRef(false); // ← agregar junto a los otros refs
   // const canvasRef = useRef(null);
   const streamRef = useRef(null);
   const inputImgRef = useRef(null);
@@ -386,7 +387,7 @@ function FormularioAtencion({ registro, onVolver }) {
   });
 
   /* ── Hooks de mutación ── */
-  // const escanear = useEscanearBoardingPass();
+  const escanear = useEscanearBoardingPass();
   // 2. Dentro de FormularioAtencion, junto a los demás hooks de mutación:
   const escanearImg = useEscanearBoardingPassImagen();
   const crearAt = useCrearAtencion();
@@ -418,6 +419,7 @@ function FormularioAtencion({ registro, onVolver }) {
   }, []);
 
   const iniciarCamara = useCallback(async () => {
+    scanningRef.current = false; // ← reset al iniciar
     try {
       const hints = new Map();
       hints.set(DecodeHintType.POSSIBLE_FORMATS, [
@@ -474,11 +476,12 @@ function FormularioAtencion({ registro, onVolver }) {
       videoRef.current,
       async (result) => {
         if (!result) return;
+        if (scanningRef.current) return; // ← ya está procesando, ignorar
+        scanningRef.current = true; // ← bloquear siguientes disparos
 
         const codigo = result.getText();
         detenerCamara();
 
-        // ← Enviar directo al backend sin pasar por el banner
         try {
           const res = await escanear.mutateAsync(codigo.trim());
           const bp = res.data.data;
@@ -508,6 +511,8 @@ function FormularioAtencion({ registro, onVolver }) {
             "Error de escaneo",
             err.response?.data?.message ?? "No se pudo decodificar el código.",
           );
+        } finally {
+          scanningRef.current = false; // ← liberar para el próximo escaneo
         }
       },
     );
