@@ -1555,7 +1555,15 @@ function FormularioAtencion({ registro, onVolver }) {
                     }
                   >
                     <Bus size={14} />
-                    <span>{nombre}</span>
+                    <span>
+                      {nombre}
+                      {d?.capacidadDisponible != null
+                        ? ` (${d.capacidadDisponible}/${d.capacidadTotal ?? t.capacidadTotal ?? "?"} pax disponibles)`
+                        : t.capacidadTotal != null
+                          ? ` (${t.capacidadTotal}/${t.capacidadTotal} pax disponibles)`
+                          : ""}
+                    </span>
+                    {/* <span>{nombre}</span> */}
                     {agotado && (
                       <span className={styles.agotadoTag}>
                         Sin disponibilidad
@@ -1649,7 +1657,15 @@ function FormularioAtencion({ registro, onVolver }) {
                     }
                   >
                     <UtensilsCrossed size={14} />
-                    <span>{nombre}</span>
+                    <span>
+                      {nombre}
+                      {d?.capacidadDisponible != null
+                        ? ` (${d.capacidadDisponible}/${d.capacidadTotal ?? r.capacidadTotal ?? "?"} cubiertos disponibles)`
+                        : r.capacidadTotal != null
+                          ? ` (${r.capacidadTotal}/${r.capacidadTotal} cubiertos disponibles)`
+                          : ""}
+                    </span>
+                    {/* <span>{nombre}</span> */}
                     {agotado && (
                       <span className={styles.agotadoTag}>
                         Sin disponibilidad
