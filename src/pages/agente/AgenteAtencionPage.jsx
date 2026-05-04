@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { BrowserMultiFormatReader } from "@zxing/browser";
-import { DecodeHintType } from "@zxing/library";
+import { DecodeHintType, BarcodeFormat } from "@zxing/library";
 import {
   Users,
   Plane,
@@ -420,7 +420,6 @@ function FormularioAtencion({ registro, onVolver }) {
 
   const iniciarCamara = useCallback(async () => {
     try {
-      // Configurar ZXing para PDF417 + formatos comunes
       const hints = new Map();
       hints.set(DecodeHintType.POSSIBLE_FORMATS, [
         BarcodeFormat.PDF_417,
@@ -436,16 +435,45 @@ function FormularioAtencion({ registro, onVolver }) {
       });
       readerRef.current = reader;
 
-      // Obtener stream con cámara trasera
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: "environment" } },
       });
       streamRef.current = stream;
       setCamOn(true);
+      // ← decodeFromStream se llama en useEffect([camOn])
+      //   cuando videoRef.current ya existe
+    } catch (err) {
+      const esPermisoDenegado =
+        err?.name === "NotAllowedError" ||
+        err?.name === "PermissionDeniedError";
+      showModal(
+        "error",
+        esPermisoDenegado ? "Permiso denegado" : "Cámara no disponible",
+        esPermisoDenegado
+          ? "Activa el permiso de cámara en la configuración del navegador e intenta de nuevo."
+          : `No se pudo acceder a la cámara. Usa "Subir Imagen" o ingresa el código manualmente. (${err?.name})`,
+      );
+    }
+  }, [detenerCamara]);
 
-      // Asignar stream al video y lanzar scan continuo
-      // ZXing maneja el loop internamente
-      reader.decodeFromStream(stream, videoRef.current, (result, err) => {
+  // useEffect inicia el scan DESPUÉS de que React renderiza el <video>
+  useEffect(() => {
+    if (!camOn) return;
+    if (!videoRef.current) return;
+    if (!streamRef.current) return;
+    if (!readerRef.current) return;
+
+    const video = videoRef.current;
+    if (video.srcObject !== streamRef.current) {
+      video.srcObject = streamRef.current;
+      video.play().catch(() => {});
+    }
+
+    // Ahora sí: videoRef.current existe en el DOM
+    readerRef.current.decodeFromStream(
+      streamRef.current,
+      videoRef.current,
+      (result, err) => {
         if (result) {
           const codigo = result.getText();
           setBpTexto(codigo);
@@ -456,34 +484,9 @@ function FormularioAtencion({ registro, onVolver }) {
             'Haz clic en "Procesar boarding pass" para continuar.',
           );
         }
-        // err es normal cuando no hay código en frame — ignorar
-      });
-    } catch (err) {
-      const esPermisoDenegado =
-        err?.name === "NotAllowedError" ||
-        err?.name === "PermissionDeniedError";
-      showModal(
-        "error",
-        esPermisoDenegado ? "Permiso denegado" : "Cámara no disponible",
-        esPermisoDenegado
-          ? "Activa el permiso de cámara en la configuración del navegador e intenta de nuevo."
-          : 'No se pudo acceder a la cámara. Usa "Subir Imagen" o ingresa el código manualmente.',
-      );
-    }
-  }, [detenerCamara]);
-
-  // Asignar srcObject al video cuando camOn=true y el elemento ya está en el DOM
-  useEffect(() => {
-    if (!camOn) return;
-    if (!videoRef.current) return;
-    if (!streamRef.current) return;
-    const video = videoRef.current;
-    if (video.srcObject === streamRef.current) return;
-    video.srcObject = streamRef.current;
-    video.play().catch(() => {
-      /* AbortError esperado en móviles */
-    });
-  }, [camOn]);
+      },
+    );
+  }, [camOn, detenerCamara]);
 
   // Cleanup al desmontar el componente
   useEffect(() => {
