@@ -574,6 +574,7 @@ function FormularioAtencion({ registro, onVolver }) {
         };
         return copy;
       });
+      setBpTexto(""); // ← AGREGAR ESTA LÍNEA — limpia el banner
       showModal(
         "success",
         "Boarding pass leído",
