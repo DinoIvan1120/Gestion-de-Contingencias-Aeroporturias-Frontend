@@ -51,31 +51,30 @@ const EMPTY_PX = { nombre: "", apellido: "", pnr: "", correo: "" };
    Helpers
    ══════════════════════ */
 /** Intenta decodificar un barcode de una imagen/video usando BarcodeDetector o canvas */
-async function leerCodigoDeImagen(source) {
-  // 1. Probar BarcodeDetector nativo (Chrome 83+)
-  if ("BarcodeDetector" in window) {
-    try {
-      const det = new window.BarcodeDetector({
-        formats: ["pdf417", "qr_code", "code_128", "aztec", "data_matrix"],
-      });
-      const codes = await det.detect(source);
-      if (codes.length > 0) return codes[0].rawValue;
-    } catch {
-      /* continúa */
-    }
-  }
-  return null;
-}
+// async function leerCodigoDeImagen(source) {
+//   if ("BarcodeDetector" in window) {
+//     try {
+//       const det = new window.BarcodeDetector({
+//         formats: ["pdf417", "qr_code", "code_128", "aztec", "data_matrix"],
+//       });
+//       const codes = await det.detect(source);
+//       if (codes.length > 0) return codes[0].rawValue;
+//     } catch {
+//       /* continúa */
+//     }
+//   }
+//   return null;
+// }
 
 /** Convierte dataURL a ImageBitmap para BarcodeDetector */
-async function dataUrlToImageBitmap(dataUrl) {
-  return new Promise((res, rej) => {
-    const img = new Image();
-    img.onload = () => createImageBitmap(img).then(res).catch(rej);
-    img.onerror = rej;
-    img.src = dataUrl;
-  });
-}
+// async function dataUrlToImageBitmap(dataUrl) {
+//   return new Promise((res, rej) => {
+//     const img = new Image();
+//     img.onload = () => createImageBitmap(img).then(res).catch(rej);
+//     img.onerror = rej;
+//     img.src = dataUrl;
+//   });
+// }
 
 /* ══════════════════════
    Checkbox toggle
@@ -286,7 +285,7 @@ function FormularioAtencion({ registro, onVolver }) {
 
   /* ── Escáner ── */
   const videoRef = useRef(null);
-  const canvasRef = useRef(null);
+  // const canvasRef = useRef(null);
   const streamRef = useRef(null);
   const inputImgRef = useRef(null);
   const [camOn, setCamOn] = useState(false);
@@ -387,7 +386,7 @@ function FormularioAtencion({ registro, onVolver }) {
   });
 
   /* ── Hooks de mutación ── */
-  const escanear = useEscanearBoardingPass();
+  // const escanear = useEscanearBoardingPass();
   // 2. Dentro de FormularioAtencion, junto a los demás hooks de mutación:
   const escanearImg = useEscanearBoardingPassImagen();
   const crearAt = useCrearAtencion();
@@ -473,15 +472,41 @@ function FormularioAtencion({ registro, onVolver }) {
     readerRef.current.decodeFromStream(
       streamRef.current,
       videoRef.current,
-      (result, err) => {
-        if (result) {
-          const codigo = result.getText();
-          setBpTexto(codigo);
-          detenerCamara();
+      async (result) => {
+        if (!result) return;
+
+        const codigo = result.getText();
+        detenerCamara();
+
+        // ← Enviar directo al backend sin pasar por el banner
+        try {
+          const res = await escanear.mutateAsync(codigo.trim());
+          const bp = res.data.data;
+          const partes = (bp.nombreCompleto ?? "").split("/");
+          const apellido = partes[0]?.trim().toUpperCase() ?? "";
+          const nombre = partes[1]?.trim().toUpperCase() ?? "";
+
+          setPasajeros((prev) => {
+            const copy = [...prev];
+            copy[pxActivo] = {
+              ...copy[pxActivo],
+              nombre,
+              apellido,
+              pnr: bp.pnr ?? "",
+            };
+            return copy;
+          });
+
           showModal(
             "success",
-            "Código detectado",
-            'Haz clic en "Procesar boarding pass" para continuar.',
+            "Boarding pass leído",
+            `${bp.nombreCompleto} · PNR: ${bp.pnr}`,
+          );
+        } catch (err) {
+          showModal(
+            "error",
+            "Error de escaneo",
+            err.response?.data?.message ?? "No se pudo decodificar el código.",
           );
         }
       },
@@ -540,55 +565,54 @@ function FormularioAtencion({ registro, onVolver }) {
   };
 
   /* ── Enviar código al backend para parsear ── */
-  const handleEscanear = async () => {
-    if (!bpTexto.trim()) {
-      showModal(
-        "error",
-        "Código vacío",
-        "Ingresa el código de barras IATA del boarding pass.",
-      );
-      return;
-    }
-    // Si es base64 de imagen, no lo enviamos — el backend espera texto IATA
-    if (bpTexto.startsWith("data:image")) {
-      showModal(
-        "error",
-        "Formato incorrecto",
-        "El campo contiene una imagen, no el código IATA. Por favor ingresa el texto del código de barras directamente.",
-      );
-      return;
-    }
-    try {
-      const res = await escanear.mutateAsync(bpTexto.trim());
-      const bp = res.data.data;
-      const partes = (bp.nombreCompleto ?? "").split("/");
-      const apellido = partes[0]?.trim().toUpperCase() ?? "";
-      const nombre = partes[1]?.trim().toUpperCase() ?? "";
-      setPasajeros((prev) => {
-        const copy = [...prev];
-        copy[pxActivo] = {
-          ...copy[pxActivo],
-          nombre,
-          apellido,
-          pnr: bp.pnr ?? "",
-        };
-        return copy;
-      });
-      setBpTexto(""); // ← AGREGAR ESTA LÍNEA — limpia el banner
-      showModal(
-        "success",
-        "Boarding pass leído",
-        `${bp.nombreCompleto} · PNR: ${bp.pnr}`,
-      );
-    } catch (err) {
-      showModal(
-        "error",
-        "Error de escaneo",
-        err.response?.data?.message ??
-          "No se pudo decodificar. Verifica que el código sea IATA BCBP.",
-      );
-    }
-  };
+  // const handleEscanear = async () => {
+  //   if (!bpTexto.trim()) {
+  //     showModal(
+  //       "error",
+  //       "Código vacío",
+  //       "Ingresa el código de barras IATA del boarding pass.",
+  //     );
+  //     return;
+  //   }
+  //   if (bpTexto.startsWith("data:image")) {
+  //     showModal(
+  //       "error",
+  //       "Formato incorrecto",
+  //       "El campo contiene una imagen, no el código IATA. Por favor ingresa el texto del código de barras directamente.",
+  //     );
+  //     return;
+  //   }
+  //   try {
+  //     const res = await escanear.mutateAsync(bpTexto.trim());
+  //     const bp = res.data.data;
+  //     const partes = (bp.nombreCompleto ?? "").split("/");
+  //     const apellido = partes[0]?.trim().toUpperCase() ?? "";
+  //     const nombre = partes[1]?.trim().toUpperCase() ?? "";
+  //     setPasajeros((prev) => {
+  //       const copy = [...prev];
+  //       copy[pxActivo] = {
+  //         ...copy[pxActivo],
+  //         nombre,
+  //         apellido,
+  //         pnr: bp.pnr ?? "",
+  //       };
+  //       return copy;
+  //     });
+  //     setBpTexto("");
+  //     showModal(
+  //       "success",
+  //       "Boarding pass leído",
+  //       `${bp.nombreCompleto} · PNR: ${bp.pnr}`,
+  //     );
+  //   } catch (err) {
+  //     showModal(
+  //       "error",
+  //       "Error de escaneo",
+  //       err.response?.data?.message ??
+  //         "No se pudo decodificar. Verifica que el código sea IATA BCBP.",
+  //     );
+  //   }
+  // };
 
   /* ── Agregar pasajero ── */
   const handleAgregarPx = () => {
@@ -1129,7 +1153,7 @@ function FormularioAtencion({ registro, onVolver }) {
               </div>
             )}
 
-            {bpTexto && !camOn && (
+            {/* {bpTexto && !camOn && (
               <div className={styles.bpDetectedBanner}>
                 <div className={styles.bpDetectedInfo}>
                   <span className={styles.bpDetectedDot} />
@@ -1144,7 +1168,7 @@ function FormularioAtencion({ registro, onVolver }) {
                   Procesar boarding pass →
                 </button>
               </div>
-            )}
+            )} */}
 
             <p className={styles.bpHint}>
               💡 Usa la cámara o sube una imagen del boarding pass para
