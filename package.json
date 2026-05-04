@@ -15,6 +15,8 @@
   "dependencies": {
     "@stomp/stompjs": "^7.0.0",
     "@tanstack/react-query": "^5.28.0",
+    "@zxing/browser": "^0.2.0",
+    "@zxing/library": "^0.22.0",
     "axios": "^1.6.7",
     "lucide-react": "^1.7.0",
     "react": "^19.0.0",

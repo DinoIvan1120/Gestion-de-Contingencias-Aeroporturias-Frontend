@@ -1,5 +1,10 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import {
+  BrowserMultiFormatReader,
+  DecodeHintType,
+  BarcodeFormat,
+} from "@zxing/browser";
+import {
   Users,
   Plane,
   Hotel,
@@ -395,113 +400,67 @@ function FormularioAtencion({ registro, onVolver }) {
   const obtenerUrl = useObtenerUrlDescarga(); // ← AGREGAR ESTA LÍNEA
   const { data: atencionesPrev = [] } = useAtencionesRegistro(registro.id);
 
-  /* ── Cámara ── */
+  /* ── Cámara con @zxing/browser (auto-scan PDF417) ── */
+  const readerRef = useRef(null); // instancia de BrowserMultiFormatReader
+
   const detenerCamara = useCallback(() => {
+    // Detener el stream de video
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
     }
+    // Resetear el reader de ZXing
+    if (readerRef.current) {
+      try {
+        readerRef.current.reset();
+      } catch {
+        /* ignorar */
+      }
+      readerRef.current = null;
+    }
     setCamOn(false);
   }, []);
 
-  /**
-   * Captura el frame actual del video y lo envía al backend (ZXing).
-   * Más confiable que BarcodeDetector: ZXing soporta PDF417 en todas las plataformas.
-   */
-  const tomarFoto = useCallback(async () => {
-    if (!videoRef.current || !streamRef.current) return;
-    if (videoRef.current.readyState < 2) {
-      showModal(
-        "error",
-        "Cámara no lista",
-        "Espera a que la cámara se estabilice e intenta de nuevo.",
-      );
-      return;
-    }
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    setBpScanning(true);
+  const iniciarCamara = useCallback(async () => {
     try {
-      canvas.width = videoRef.current.videoWidth;
-      canvas.height = videoRef.current.videoHeight;
-      canvas.getContext("2d").drawImage(videoRef.current, 0, 0);
+      // Configurar ZXing para PDF417 + formatos comunes
+      const hints = new Map();
+      hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+        BarcodeFormat.PDF_417,
+        BarcodeFormat.QR_CODE,
+        BarcodeFormat.CODE_128,
+        BarcodeFormat.AZTEC,
+        BarcodeFormat.DATA_MATRIX,
+      ]);
+      hints.set(DecodeHintType.TRY_HARDER, true);
 
-      const blob = await new Promise((res) =>
-        canvas.toBlob(res, "image/jpeg", 0.92),
-      );
-      if (!blob) throw new Error("No se pudo capturar el frame");
-
-      const formData = new FormData();
-      formData.append("imagen", blob, "boarding-pass-cam.jpg");
-
-      const res = await escanearImg.mutateAsync(formData);
-      const bp = res.data.data;
-      const partes = (bp.nombreCompleto ?? "").split("/");
-      const apellido = partes[0]?.trim().toUpperCase() ?? "";
-      const nombre = partes[1]?.trim().toUpperCase() ?? "";
-
-      setPasajeros((prev) => {
-        const copy = [...prev];
-        copy[pxActivo] = {
-          ...copy[pxActivo],
-          nombre,
-          apellido,
-          pnr: bp.pnr ?? "",
-        };
-        return copy;
+      const reader = new BrowserMultiFormatReader(hints, {
+        delayBetweenScanAttempts: 300,
       });
+      readerRef.current = reader;
 
-      detenerCamara();
-      showModal(
-        "success",
-        "Boarding pass leído",
-        `${bp.nombreCompleto} · PNR: ${bp.pnr}`,
-      );
-    } catch (err) {
-      showModal(
-        "error",
-        "No se pudo leer el código",
-        err.response?.data?.message ??
-          "No se detectó el código. Asegúrate que el código de barras esté enfocado y vuelve a intentarlo.",
-      );
-    } finally {
-      setBpScanning(false);
-    }
-  }, [detenerCamara, escanearImg, pxActivo]);
-
-  // ═══════════════════════════════════════════════════════════════════
-  // FIX CÁMARA NEGRA — ROOT CAUSE:
-  // El <video> se renderiza condicionalmente con {camOn && <video/>}.
-  // Cuando iniciarCamara corría, camOn=false → videoRef.current=NULL
-  // → srcObject nunca se asignaba → pantalla negra.
-  //
-  // SOLUCIÓN: useEffect que asigna srcObject DESPUÉS de que React
-  // renderice el <video> (cuando camOn pasa a true).
-  // ═══════════════════════════════════════════════════════════════════
-  useEffect(() => {
-    if (!camOn) return;
-    if (!videoRef.current) return;
-    if (!streamRef.current) return;
-    const video = videoRef.current;
-    if (video.srcObject === streamRef.current) return;
-    video.srcObject = streamRef.current;
-    video.play().catch(() => {
-      /* AbortError esperado en móviles */
-    });
-  }, [camOn]);
-
-  const iniciarCamara = async () => {
-    try {
-      // Sin width/height constraints — Android elige la resolución óptima
+      // Obtener stream con cámara trasera
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: "environment" } },
       });
       streamRef.current = stream;
-      // setCamOn(true) → React renderiza <video> → useEffect asigna srcObject → play()
       setCamOn(true);
-      // scanLoop se inicia desde useEffect([camOn]) después de que
-      // React monte el <video> y useEffect asigne srcObject
+
+      // Asignar stream al video y lanzar scan continuo
+      // ZXing maneja el loop internamente
+      reader.decodeFromStream(stream, videoRef.current, (result, err) => {
+        if (result) {
+          const codigo = result.getText();
+          setBpTexto(codigo);
+          detenerCamara();
+          showModal(
+            "success",
+            "Código detectado",
+            'Haz clic en "Procesar boarding pass" para continuar.',
+          );
+        }
+        // err es normal cuando no hay código en frame — ignorar
+      });
     } catch (err) {
       const esPermisoDenegado =
         err?.name === "NotAllowedError" ||
@@ -514,12 +473,25 @@ function FormularioAtencion({ registro, onVolver }) {
           : 'No se pudo acceder a la cámara. Usa "Subir Imagen" o ingresa el código manualmente.',
       );
     }
-  };
+  }, [detenerCamara]);
 
+  // Asignar srcObject al video cuando camOn=true y el elemento ya está en el DOM
+  useEffect(() => {
+    if (!camOn) return;
+    if (!videoRef.current) return;
+    if (!streamRef.current) return;
+    const video = videoRef.current;
+    if (video.srcObject === streamRef.current) return;
+    video.srcObject = streamRef.current;
+    video.play().catch(() => {
+      /* AbortError esperado en móviles */
+    });
+  }, [camOn]);
+
+  // Cleanup al desmontar el componente
   useEffect(() => {
     return () => detenerCamara();
   }, [detenerCamara]);
-
   /* ── Subir imagen ── */
   // 3. Reemplazar handleSubirImagen completo:
   const handleSubirImagen = async (e) => {
@@ -1146,32 +1118,13 @@ function FormularioAtencion({ registro, onVolver }) {
                   playsInline
                   muted
                 />
-                <canvas ref={canvasRef} style={{ display: "none" }} />
-
-                {/* ← AGREGAR ESTO */}
-                <div className={styles.camControls}>
-                  <button
-                    className={styles.camCaptureBtn}
-                    onClick={tomarFoto}
-                    disabled={bpScanning}
-                  >
-                    {bpScanning ? (
-                      <>
-                        <Spinner size="sm" /> Procesando...
-                      </>
-                    ) : (
-                      <>
-                        <Camera size={18} /> Capturar y Leer Código
-                      </>
-                    )}
-                  </button>
+                {/* Indicador de escaneo activo */}
+                <div className={styles.camScanning}>
+                  <span className={styles.camScanLine} />
+                  <p className={styles.camScanTip}>
+                    📷 Apunta al código de barras — se detectará automáticamente
+                  </p>
                 </div>
-                {/* ← HASTA AQUÍ */}
-
-                <p className={styles.camTip}>
-                  Encuadra el código de barras y presiona "Capturar y Leer
-                  Código"
-                </p>
               </div>
             )}
 
