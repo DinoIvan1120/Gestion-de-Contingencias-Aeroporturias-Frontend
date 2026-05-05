@@ -189,7 +189,7 @@ export default function LoginPage() {
             </div>
             <div>
               <p className={styles.brandName}>
-                <span>SAASA</span> - Innovación
+                <span>SAASA</span> - Diseño e Innovación
               </p>
               <p className={styles.brandTagline}>Plus Ultra Airlines</p>
             </div>
@@ -693,7 +693,7 @@ export default function LoginPage() {
             )}
           </div>
 
-          <p className={styles.cardFooter}>Proyectos e Innovación - 2026</p>
+          <p className={styles.cardFooter}>Diseño e Innovación - 2026</p>
         </div>
       </div>
 
