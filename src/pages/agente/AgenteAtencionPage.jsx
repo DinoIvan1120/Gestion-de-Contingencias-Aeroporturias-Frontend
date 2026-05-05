@@ -45,7 +45,22 @@ const BADGE_MAP = {
   PROGRAMADO: "info",
 };
 const HOY = new Date().toISOString().slice(0, 10);
-const EMPTY_PX = { nombre: "", apellido: "", pnr: "", correo: "" };
+// const EMPTY_PX = { nombre: "", apellido: "", pnr: "", correo: "" };
+
+const EMPTY_SV = {
+  hotelRec: null,
+  simples: 0,
+  dobles: 0,
+  matrim: 0,
+  svHotel: { desayuno: false, almuerzo: false, snack: false, cena: false },
+  transRec: null,
+  cantTrans: 1,
+  tipoTrans: { individual: false, grupal: false },
+  restRec: null,
+  cantRest: 1,
+  svRest: { desayuno: false, almuerzo: false, cena: false },
+};
+const EMPTY_PX = { nombre: "", apellido: "", pnr: "", correo: "", ...EMPTY_SV };
 
 /* ══════════════════════
    Helpers
@@ -296,6 +311,13 @@ function FormularioAtencion({ registro, onVolver }) {
   const [modoManual, setModoManual] = useState(false);
   const [syncing, setSyncing] = useState(false); // estado del botón sincronizar
 
+  /*
+   * "un_correo"               → mismos servicios, UN correo del modal (Caso 1/2 original)
+   * "correo_individual"       → mismos servicios, correo de CADA pasajero (Caso 2 nuevo)
+   * "servicios_independientes"→ servicios distintos por pasajero, correo de CADA uno (Caso 3)
+   */
+  const [modoEnvio, setModoEnvio] = useState("un_correo");
+
   /* ── Pasajeros ── */
   const [pasajeros, setPasajeros] = useState([{ ...EMPTY_PX }]);
   const [pxActivo, setPxActivo] = useState(0);
@@ -330,6 +352,67 @@ function FormularioAtencion({ registro, onVolver }) {
   /* ── Datos de emisión ── */
   const [fechaEmision, setFechaEmision] = useState(HOY);
   const [lugarEmision, setLugarEmision] = useState("LIM");
+
+  /* ── Computed service state (Caso 3 = per-passenger, otros = global) ── */
+  const isSvInd = modoEnvio === "servicios_independientes";
+
+  const setPxSvField = (key, val) =>
+    setPasajeros((prev) => {
+      const copy = [...prev];
+      copy[pxActivo] = { ...copy[pxActivo], [key]: val };
+      return copy;
+    });
+
+  const pxSv = pasajeros[pxActivo] ?? {};
+  const _hotelRec = isSvInd ? (pxSv.hotelRec ?? null) : hotelRec;
+  const _simples = isSvInd ? (pxSv.simples ?? 0) : simples;
+  const _dobles = isSvInd ? (pxSv.dobles ?? 0) : dobles;
+  const _matrim = isSvInd ? (pxSv.matrim ?? 0) : matrim;
+  const _svHotel = isSvInd
+    ? (pxSv.svHotel ?? {
+        desayuno: false,
+        almuerzo: false,
+        snack: false,
+        cena: false,
+      })
+    : svHotel;
+  const _transRec = isSvInd ? (pxSv.transRec ?? null) : transRec;
+  const _cantTrans = isSvInd ? (pxSv.cantTrans ?? 1) : cantTrans;
+  const _tipoTrans = isSvInd
+    ? (pxSv.tipoTrans ?? { individual: false, grupal: false })
+    : tipoTrans;
+  const _restRec = isSvInd ? (pxSv.restRec ?? null) : restRec;
+  const _cantRest = isSvInd ? (pxSv.cantRest ?? 1) : cantRest;
+  const _svRest = isSvInd
+    ? (pxSv.svRest ?? { desayuno: false, almuerzo: false, cena: false })
+    : svRest;
+
+  const _setHotelRec = isSvInd
+    ? (v) => setPxSvField("hotelRec", v)
+    : setHotelRec;
+  const _setSimples = isSvInd ? (v) => setPxSvField("simples", v) : setSimples;
+  const _setDobles = isSvInd ? (v) => setPxSvField("dobles", v) : setDobles;
+  const _setMatrim = isSvInd ? (v) => setPxSvField("matrim", v) : setMatrim;
+  const _setSvHotel = isSvInd
+    ? (v) => setPxSvField("svHotel", typeof v === "function" ? v(_svHotel) : v)
+    : setSvHotel;
+  const _setTransRec = isSvInd
+    ? (v) => setPxSvField("transRec", v)
+    : setTransRec;
+  const _setCantTrans = isSvInd
+    ? (v) => setPxSvField("cantTrans", v)
+    : setCantTrans;
+  const _setTipoTrans = isSvInd
+    ? (v) =>
+        setPxSvField("tipoTrans", typeof v === "function" ? v(_tipoTrans) : v)
+    : setTipoTrans;
+  const _setRestRec = isSvInd ? (v) => setPxSvField("restRec", v) : setRestRec;
+  const _setCantRest = isSvInd
+    ? (v) => setPxSvField("cantRest", v)
+    : setCantRest;
+  const _setSvRest = isSvInd
+    ? (v) => setPxSvField("svRest", typeof v === "function" ? v(_svRest) : v)
+    : setSvRest;
 
   /* ── Modales ── */
   const [modal, setModal] = useState({
@@ -636,51 +719,67 @@ function FormularioAtencion({ registro, onVolver }) {
   };
 
   /* ── Construir lista de servicios con el nuevo formato del backend ── */
-  const buildServicios = () => {
+  const buildServicios = (pxIdx = null) => {
+    let sv = {};
+    if (isSvInd && pxIdx !== null) sv = pasajeros[pxIdx] ?? {};
+
+    const hRec = isSvInd && pxIdx !== null ? (sv.hotelRec ?? null) : _hotelRec;
+    const sims = isSvInd && pxIdx !== null ? (sv.simples ?? 0) : _simples;
+    const dobs = isSvInd && pxIdx !== null ? (sv.dobles ?? 0) : _dobles;
+    const mats = isSvInd && pxIdx !== null ? (sv.matrim ?? 0) : _matrim;
+    const svH = isSvInd && pxIdx !== null ? (sv.svHotel ?? {}) : _svHotel;
+    const tRec = isSvInd && pxIdx !== null ? (sv.transRec ?? null) : _transRec;
+    const cTrans = isSvInd && pxIdx !== null ? (sv.cantTrans ?? 1) : _cantTrans;
+    const tTrans =
+      isSvInd && pxIdx !== null ? (sv.tipoTrans ?? {}) : _tipoTrans;
+    const rRec = isSvInd && pxIdx !== null ? (sv.restRec ?? null) : _restRec;
+    const cRest = isSvInd && pxIdx !== null ? (sv.cantRest ?? 1) : _cantRest;
+    const svR = isSvInd && pxIdx !== null ? (sv.svRest ?? {}) : _svRest;
+
     const lista = [];
-    if (hotelRec) {
+    if (hRec) {
       const tipoHab =
-        simples > 0
+        sims > 0
           ? "SIMPLE"
-          : dobles > 0
+          : dobs > 0
             ? "DOBLE"
-            : matrim > 0
+            : mats > 0
               ? "MATRIMONIAL"
               : null;
       if (tipoHab) {
         lista.push({
-          vueloRecursoId: hotelRec.vueloRecursoId,
+          vueloRecursoId: hRec.vueloRecursoId,
           tipoDetalle: "HOTEL",
           tipoHabitacion: tipoHab,
-          desayuno: svHotel.desayuno,
-          almuerzo: svHotel.almuerzo,
-          cena: svHotel.cena,
-          snack: svHotel.snack,
-          cantidad: simples + dobles + matrim || 1,
+          desayuno: svH.desayuno,
+          almuerzo: svH.almuerzo,
+          cena: svH.cena,
+          snack: svH.snack,
+          cantidad: sims + dobs + mats || 1,
         });
       }
     }
-    if (transRec) {
-      const tipoT = tipoTrans.individual
+    if (tRec) {
+      const tipoT = tTrans.individual
         ? "INDIVIDUAL"
-        : tipoTrans.grupal
+        : tTrans.grupal
           ? "GRUPAL"
           : "INDIVIDUAL";
       lista.push({
-        vueloRecursoId: transRec.vueloRecursoId,
+        vueloRecursoId: tRec.vueloRecursoId,
         tipoDetalle: "TRANSPORTE",
         tipoTransporte: tipoT,
-        cantidad: cantTrans,
+        cantidad: cTrans,
       });
     }
-    if (restRec) {
+    if (rRec) {
       lista.push({
-        vueloRecursoId: restRec.vueloRecursoId,
+        vueloRecursoId: rRec.vueloRecursoId,
         tipoDetalle: "RESTAURANTE",
-        desayuno: svRest.desayuno,
-        almuerzo: svRest.almuerzo,
-        cena: svRest.cena,
-        cantidad: cantRest,
+        desayuno: svR.desayuno,
+        almuerzo: svR.almuerzo,
+        cena: svR.cena,
+        cantidad: cRest,
       });
     }
     return lista;
@@ -688,10 +787,11 @@ function FormularioAtencion({ registro, onVolver }) {
 
   /* ── Registrar pasajeros y servicios (común a ambos botones) ── */
   const registrarPasajeros = async () => {
-    const validos = pasajeros.filter(
-      (p) => p.nombre && p.apellido && p.pnr && p.correo,
-    );
-    if (!validos.length) {
+    const validosConIdx = pasajeros
+      .map((p, i) => ({ p, i }))
+      .filter(({ p }) => p.nombre && p.apellido && p.pnr && p.correo);
+
+    if (!validosConIdx.length) {
       showModal(
         "error",
         "Sin pasajeros",
@@ -699,8 +799,9 @@ function FormularioAtencion({ registro, onVolver }) {
       );
       return null;
     }
+
     const atencionIds = [];
-    for (const px of validos) {
+    for (const { p: px, i } of validosConIdx) {
       const res = await crearAt.mutateAsync({
         nombre: px.nombre.toUpperCase(),
         apellido: px.apellido.toUpperCase(),
@@ -714,7 +815,7 @@ function FormularioAtencion({ registro, onVolver }) {
         registroVueloDiarioId: registro.id,
       });
       const atId = res.data.data?.id;
-      const svList = buildServicios();
+      const svList = isSvInd ? buildServicios(i) : buildServicios();
       if (svList.length && atId) {
         await asignarSv.mutateAsync({
           atencionId: atId,
@@ -725,7 +826,7 @@ function FormularioAtencion({ registro, onVolver }) {
       }
       if (atId) atencionIds.push({ id: atId, correo: px.correo });
     }
-    return { atencionIds, total: validos.length };
+    return { atencionIds, total: validosConIdx.length };
   };
 
   // const resetForm = () => {
@@ -791,12 +892,15 @@ function FormularioAtencion({ registro, onVolver }) {
       );
       return;
     }
-    // Si hay un solo pasajero, pre-llenar con su correo
-    const correoPreFill = validos.length === 1 ? validos[0].correo : "";
-    setEmailModal({ open: true, correo: correoPreFill, atencionIds: [] });
+    if (modoEnvio === "un_correo") {
+      const correoPreFill = validos.length === 1 ? validos[0].correo : "";
+      setEmailModal({ open: true, correo: correoPreFill, atencionIds: [] });
+    } else {
+      await handleEnviarIndividual();
+    }
   };
 
-  /* ── Confirmar envío desde el modal de correo ── */
+  /* ── Caso original: un solo correo destino (modal) ── */
   const handleConfirmarEnvio = async () => {
     const correo = emailModal.correo.trim();
     if (!correo || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
@@ -811,28 +915,53 @@ function FormularioAtencion({ registro, onVolver }) {
     try {
       const result = await registrarPasajeros();
       if (!result) return;
-
       const { atencionIds, total } = result;
       for (const { id } of atencionIds) {
         await genYEnviar.mutateAsync({ id, correoDestino: correo });
-
-        // ✅ DESCARGAR AUTOMÁTICAMENTE (dentro del loop)
         try {
           const res = await obtenerUrl.mutateAsync(id);
-          const { downloadUrl } = res.data;
-          if (downloadUrl) {
-            window.open(downloadUrl, "_blank");
-          }
-        } catch (err) {
-          console.error("Error descargando PDF:", err);
-          // No bloqueante - el PDF ya fue enviado por correo
+          if (res.data?.downloadUrl)
+            window.open(res.data.downloadUrl, "_blank");
+        } catch {
+          /* no bloqueante */
         }
       }
-
       showModal(
         "success",
         "PDF Enviado",
         `${total} pasajero${total !== 1 ? "s" : ""} registrado${total !== 1 ? "s" : ""}. El voucher fue enviado a ${correo}.`,
+      );
+      await refetchDisp();
+      resetForm();
+    } catch (err) {
+      showModal(
+        "error",
+        "Error",
+        err.response?.data?.message ?? "Error al registrar o enviar.",
+      );
+    }
+  };
+
+  /* ── Caso 2 nuevo / Caso 3: correo individual por pasajero ── */
+  const handleEnviarIndividual = async () => {
+    try {
+      const result = await registrarPasajeros();
+      if (!result) return;
+      const { atencionIds, total } = result;
+      for (const { id, correo: correoPx } of atencionIds) {
+        await genYEnviar.mutateAsync({ id, correoDestino: correoPx });
+        try {
+          const res = await obtenerUrl.mutateAsync(id);
+          if (res.data?.downloadUrl)
+            window.open(res.data.downloadUrl, "_blank");
+        } catch {
+          /* no bloqueante */
+        }
+      }
+      showModal(
+        "success",
+        "Vouchers enviados",
+        `${total} pasajero${total !== 1 ? "s" : ""} registrado${total !== 1 ? "s" : ""}. Cada PDF fue enviado al correo individual.`,
       );
       await refetchDisp();
       resetForm();
@@ -1397,9 +1526,65 @@ function FormularioAtencion({ registro, onVolver }) {
           </div>
         </div>
 
+        {/* ─── Selector de modo (solo con 2+ pasajeros) ─── */}
+        {pasajeros.length > 1 && (
+          <div className={styles.modoEnvioCard}>
+            <p className={styles.modoEnvioLabel}>Modo de asignación y envío:</p>
+            <div className={styles.modoEnvioTabs}>
+              {[
+                {
+                  id: "un_correo",
+                  label: "Un correo",
+                  sub: "Mismos servicios · un destino",
+                },
+                {
+                  id: "correo_individual",
+                  label: "Correo individual",
+                  sub: "Mismos servicios · correo de cada pasajero",
+                },
+                {
+                  id: "servicios_independientes",
+                  label: "Servicios independientes",
+                  sub: "Servicios distintos · correo de cada pasajero",
+                },
+              ].map((m) => (
+                <button
+                  key={m.id}
+                  className={[
+                    styles.modoEnvioTab,
+                    modoEnvio === m.id ? styles.modoEnvioTabActive : "",
+                  ].join(" ")}
+                  onClick={() => setModoEnvio(m.id)}
+                >
+                  <span className={styles.modoEnvioTabLabel}>{m.label}</span>
+                  <span className={styles.modoEnvioTabSub}>{m.sub}</span>
+                </button>
+              ))}
+            </div>
+            {modoEnvio === "servicios_independientes" && (
+              <p className={styles.modoEnvioNota}>
+                📌 Asignando servicios para{" "}
+                <strong>
+                  Pasajero {pxActivo + 1}
+                  {pasajeros[pxActivo]?.pnr
+                    ? ` · ${pasajeros[pxActivo].pnr}`
+                    : ""}
+                </strong>
+                . Cambia de pestaña arriba para asignar servicios a otro
+                pasajero.
+              </p>
+            )}
+          </div>
+        )}
+
         {/* ─── Asignación de Servicios ─── */}
         <div className={styles.subseccion}>
-          <h3 className={styles.subseccionTitulo}>Asignación de Servicios</h3>
+          <h3 className={styles.subseccionTitulo}>
+            Asignación de Servicios
+            {isSvInd && pasajeros.length > 1 && (
+              <span className={styles.svIndTag}>Pasajero {pxActivo + 1}</span>
+            )}
+          </h3>
 
           {/* HOTEL — fuente: recursosHotel (lo que el líder habilitó) */}
           <div className={styles.svBloque}>
@@ -1418,7 +1603,7 @@ function FormularioAtencion({ registro, onVolver }) {
                   (h.habitacionesDobles ?? 0) +
                   (h.habitacionesMatrimoniales ?? 0);
                 const rid = h.vueloRecursoId ?? h.id;
-                const sel = hotelRec?.vueloRecursoId === rid;
+                const sel = _hotelRec?.vueloRecursoId === rid;
                 const agotado = habDisp !== null && habDisp === 0;
                 return (
                   <button
@@ -1429,7 +1614,7 @@ function FormularioAtencion({ registro, onVolver }) {
                     ].join(" ")}
                     disabled={agotado}
                     onClick={() => {
-                      setHotelRec(
+                      _setHotelRec(
                         sel
                           ? null
                           : {
@@ -1468,7 +1653,7 @@ function FormularioAtencion({ registro, onVolver }) {
               })
             )}
 
-            {hotelRec && (
+            {_hotelRec && (
               <div className={styles.hotelDetalle}>
                 <p className={styles.hotelDetalleTitulo}>
                   Seleccionar Tipo y Cantidad de Habitaciones
@@ -1476,23 +1661,23 @@ function FormularioAtencion({ registro, onVolver }) {
                 <div className={styles.stepperGrid}>
                   <Stepper
                     label="Simples"
-                    disponibles={hotelRec.habitacionesSimples_Disponibles ?? 0}
-                    value={simples}
-                    onChange={setSimples}
+                    disponibles={_hotelRec.habitacionesSimples_Disponibles ?? 0}
+                    value={_simples}
+                    onChange={_setSimples}
                   />
                   <Stepper
                     label="Dobles"
-                    disponibles={hotelRec.habitacionesDobles_Disponibles ?? 0}
-                    value={dobles}
-                    onChange={setDobles}
+                    disponibles={_hotelRec.habitacionesDobles_Disponibles ?? 0}
+                    value={_dobles}
+                    onChange={_setDobles}
                   />
                   <Stepper
                     label="Matrimoniales"
                     disponibles={
-                      hotelRec.habitacionesMatrimoniales_Disponibles ?? 0
+                      _hotelRec.habitacionesMatrimoniales_Disponibles ?? 0
                     }
-                    value={matrim}
-                    onChange={setMatrim}
+                    value={_matrim}
+                    onChange={_setMatrim}
                   />
                 </div>
                 <p className={styles.hotelDetalleTitulo}>
@@ -1500,26 +1685,30 @@ function FormularioAtencion({ registro, onVolver }) {
                 </p>
                 <div className={styles.chkGrid}>
                   <Chk
-                    checked={svHotel.desayuno}
-                    onChange={(v) => setSvHotel((s) => ({ ...s, desayuno: v }))}
+                    checked={_svHotel.desayuno}
+                    onChange={(v) =>
+                      _setSvHotel((s) => ({ ...s, desayuno: v }))
+                    }
                     label="Desayuno"
                     color="#22c55e"
                   />
                   <Chk
-                    checked={svHotel.almuerzo}
-                    onChange={(v) => setSvHotel((s) => ({ ...s, almuerzo: v }))}
+                    checked={_svHotel.almuerzo}
+                    onChange={(v) =>
+                      _setSvHotel((s) => ({ ...s, almuerzo: v }))
+                    }
                     label="Almuerzo / Comida"
                     color="#22c55e"
                   />
                   <Chk
-                    checked={svHotel.snack}
-                    onChange={(v) => setSvHotel((s) => ({ ...s, snack: v }))}
+                    checked={_svHotel.snack}
+                    onChange={(v) => _setSvHotel((s) => ({ ...s, snack: v }))}
                     label="Snack"
                     color="#22c55e"
                   />
                   <Chk
-                    checked={svHotel.cena}
-                    onChange={(v) => setSvHotel((s) => ({ ...s, cena: v }))}
+                    checked={_svHotel.cena}
+                    onChange={(v) => _setSvHotel((s) => ({ ...s, cena: v }))}
                     label="Cena"
                     color="#22c55e"
                   />
@@ -1540,7 +1729,7 @@ function FormularioAtencion({ registro, onVolver }) {
                 const d = getDispTrans(t);
                 const nombre = t.nombreProveedor ?? t.proveedorNombre;
                 const rid = t.vueloRecursoId ?? t.id;
-                const sel = transRec?.vueloRecursoId === rid;
+                const sel = _transRec?.vueloRecursoId === rid;
                 const agotado = d?.agotado === true;
                 return (
                   <button
@@ -1551,7 +1740,7 @@ function FormularioAtencion({ registro, onVolver }) {
                     ].join(" ")}
                     disabled={agotado}
                     onClick={() =>
-                      setTransRec(sel ? null : { ...t, vueloRecursoId: rid })
+                      _setTransRec(sel ? null : { ...t, vueloRecursoId: rid })
                     }
                   >
                     <Bus size={14} />
@@ -1574,7 +1763,7 @@ function FormularioAtencion({ registro, onVolver }) {
               })
             )}
 
-            {transRec && (
+            {_transRec && (
               <div className={styles.transDetalle}>
                 <p className={styles.hotelDetalleTitulo}>Tipo de Transporte:</p>
                 <div
@@ -1582,9 +1771,9 @@ function FormularioAtencion({ registro, onVolver }) {
                   style={{ gridTemplateColumns: "1fr 1fr" }}
                 >
                   <Chk
-                    checked={tipoTrans.individual}
+                    checked={_tipoTrans.individual}
                     onChange={(v) =>
-                      setTipoTrans((s) => ({
+                      _setTipoTrans((s) => ({
                         ...s,
                         individual: v,
                         grupal: v ? false : s.grupal,
@@ -1594,9 +1783,9 @@ function FormularioAtencion({ registro, onVolver }) {
                     color="#3b82f6"
                   />
                   <Chk
-                    checked={tipoTrans.grupal}
+                    checked={_tipoTrans.grupal}
                     onChange={(v) =>
-                      setTipoTrans((s) => ({
+                      _setTipoTrans((s) => ({
                         ...s,
                         grupal: v,
                         individual: v ? false : s.individual,
@@ -1607,21 +1796,21 @@ function FormularioAtencion({ registro, onVolver }) {
                   />
                 </div>
                 {/* FIX #3: Stepper de cantidad de pasajeros en transporte */}
-                {(tipoTrans.individual || tipoTrans.grupal) &&
+                {(_tipoTrans.individual || _tipoTrans.grupal) &&
                   (() => {
-                    const d = getDispTrans(transRec);
+                    const d = getDispTrans(_transRec);
                     const cap =
-                      d?.capacidadDisponible ?? transRec?.capacidadTotal ?? 0;
+                      d?.capacidadDisponible ?? _transRec?.capacidadTotal ?? 0;
                     return (
                       <Stepper
                         label={
-                          tipoTrans.individual
+                          _tipoTrans.individual
                             ? "Pasajeros individuales"
                             : "Pasajeros grupales"
                         }
                         disponibles={cap}
-                        value={cantTrans}
-                        onChange={setCantTrans}
+                        value={_cantTrans}
+                        onChange={_setCantTrans}
                       />
                     );
                   })()}
@@ -1642,7 +1831,7 @@ function FormularioAtencion({ registro, onVolver }) {
                 const d = getDispRest(r);
                 const nombre = r.nombreProveedor ?? r.proveedorNombre;
                 const rid = r.vueloRecursoId ?? r.id;
-                const sel = restRec?.vueloRecursoId === rid;
+                const sel = _restRec?.vueloRecursoId === rid;
                 const agotado = d?.agotado === true;
                 return (
                   <button
@@ -1653,7 +1842,7 @@ function FormularioAtencion({ registro, onVolver }) {
                     ].join(" ")}
                     disabled={agotado}
                     onClick={() =>
-                      setRestRec(sel ? null : { ...r, vueloRecursoId: rid })
+                      _setRestRec(sel ? null : { ...r, vueloRecursoId: rid })
                     }
                   >
                     <UtensilsCrossed size={14} />
@@ -1676,22 +1865,22 @@ function FormularioAtencion({ registro, onVolver }) {
               })
             )}
 
-            {restRec && (
+            {_restRec && (
               <div className={styles.restDetalle}>
                 <p className={styles.hotelDetalleTitulo}>
                   Servicios del Restaurante:
                 </p>
                 {/* FIX #4: Stepper de cubiertos */}
                 {(() => {
-                  const d = getDispRest(restRec);
+                  const d = getDispRest(_restRec);
                   const cap =
-                    d?.capacidadDisponible ?? restRec?.capacidadTotal ?? 0;
+                    d?.capacidadDisponible ?? _restRec?.capacidadTotal ?? 0;
                   return (
                     <Stepper
                       label="Cantidad de cubiertos"
                       disponibles={cap}
-                      value={cantRest}
-                      onChange={setCantRest}
+                      value={_cantRest}
+                      onChange={_setCantRest}
                     />
                   );
                 })()}
@@ -1700,22 +1889,22 @@ function FormularioAtencion({ registro, onVolver }) {
                   // style={{ gridTemplateColumns: "repeat(3,1fr)" }}
                 >
                   <Chk
-                    checked={svRest.desayuno}
-                    onChange={(v) => setSvRest((s) => ({ ...s, desayuno: v }))}
+                    checked={_svRest.desayuno}
+                    onChange={(v) => _setSvRest((s) => ({ ...s, desayuno: v }))}
                     label="Desayuno"
                     emoji="🌅"
                     color="#f97316"
                   />
                   <Chk
-                    checked={svRest.almuerzo}
-                    onChange={(v) => setSvRest((s) => ({ ...s, almuerzo: v }))}
+                    checked={_svRest.almuerzo}
+                    onChange={(v) => _setSvRest((s) => ({ ...s, almuerzo: v }))}
                     label="Almuerzo"
                     emoji="😋"
                     color="#f97316"
                   />
                   <Chk
-                    checked={svRest.cena}
-                    onChange={(v) => setSvRest((s) => ({ ...s, cena: v }))}
+                    checked={_svRest.cena}
+                    onChange={(v) => _setSvRest((s) => ({ ...s, cena: v }))}
                     label="Cena"
                     emoji="🌙"
                     color="#f97316"
@@ -1742,7 +1931,9 @@ function FormularioAtencion({ registro, onVolver }) {
             disabled={loading}
           >
             {loading ? <Spinner size="sm" /> : <Send size={16} />}
-            Generar y Enviar
+            {modoEnvio === "un_correo"
+              ? "Generar y Enviar"
+              : "Generar y Enviar (individual)"}
           </button>
         </div>
       </div>
@@ -1810,7 +2001,10 @@ function FormularioAtencion({ registro, onVolver }) {
                 onClick={handleConfirmarEnvio}
                 disabled={!emailModal.correo.trim()}
               >
-                <Send size={14} /> Generar y Enviar
+                <Send size={14} />{" "}
+                {modoEnvio === "un_correo"
+                  ? "Generar y Enviar"
+                  : "Generar y Enviar (individual)"}
               </button>
             </div>
           </div>
