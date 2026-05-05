@@ -564,3 +564,543 @@
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════
+   COMBOBOX VUELO — selector moderno con búsqueda y tarjetas
+   ══════════════════════════════════════════════════════════════ */
+
+.comboboxWrap {
+  position: relative;
+  width: 100%;
+}
+
+/* ── Trigger principal (botón que abre el dropdown) ── */
+.comboboxTrigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-lg);
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+  font-family: var(--font-body);
+  text-align: left;
+  min-height: 52px;
+}
+
+.comboboxTrigger:hover {
+  border-color: var(--rol-lider);
+}
+
+.comboboxOpen {
+  border-color: var(--rol-lider) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--rol-lider) 15%, transparent);
+}
+
+.comboboxError {
+  border-color: #dc2626 !important;
+}
+
+/* Vuelo seleccionado dentro del trigger */
+.comboboxSelected {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.comboboxFlightBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: var(--rol-lider, #dc2626);
+  color: #fff;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.comboboxFlightAero {
+  font-size: 0.85rem;
+  color: var(--text-700);
+  font-weight: 500;
+}
+
+.comboboxFlightRoute {
+  font-size: 0.82rem;
+  color: var(--text-500);
+}
+
+.comboboxContBadge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 99px;
+  flex-shrink: 0;
+}
+
+/* Placeholder (nada seleccionado) */
+.comboboxPlaceholder {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-400);
+  flex: 1;
+}
+
+/* Zona de acciones (clear + chevron) */
+.comboboxActions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.comboboxClear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  color: var(--text-400);
+  transition:
+    background 0.12s,
+    color 0.12s;
+  cursor: pointer;
+}
+
+.comboboxClear:hover {
+  background: var(--bg);
+  color: var(--text-700);
+}
+
+.comboboxChevron {
+  color: var(--text-400);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.comboboxChevronUp {
+  transform: rotate(180deg);
+}
+
+/* ── Dropdown panel ── */
+.comboboxDropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.06);
+  z-index: 200;
+  overflow: hidden;
+  animation: dropdownIn 0.15s ease;
+}
+
+@keyframes dropdownIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Barra de búsqueda dentro del dropdown */
+.comboboxSearch {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.875rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-400);
+}
+
+.comboboxSearchInput {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 0.875rem;
+  font-family: var(--font-body);
+  color: var(--text-900);
+  background: transparent;
+}
+
+.comboboxSearchInput::placeholder {
+  color: var(--text-400);
+}
+
+.comboboxSearchClear {
+  display: flex;
+  align-items: center;
+  color: var(--text-400);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 2px;
+  border-radius: 3px;
+  transition: color 0.12s;
+}
+.comboboxSearchClear:hover {
+  color: var(--text-700);
+}
+
+/* Contador de resultados */
+.comboboxCount {
+  font-size: 0.72rem;
+  color: var(--text-400);
+  padding: 0.3rem 0.875rem;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+/* Lista scrolleable de opciones */
+.comboboxList {
+  max-height: 320px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Estado vacío */
+.comboboxEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  color: var(--text-300);
+  font-size: 0.82rem;
+}
+
+/* Opción de vuelo */
+.comboboxOption {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-body);
+  transition: background 0.1s;
+}
+
+.comboboxOption:last-child {
+  border-bottom: none;
+}
+
+.comboboxOption:hover {
+  background: var(--bg);
+}
+
+.comboboxOptionSel {
+  background: color-mix(in srgb, var(--rol-lider) 6%, transparent) !important;
+}
+
+/* Lado izquierdo de la opción */
+.comboboxOptLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-width: 0;
+}
+
+.comboboxOptCode {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-900);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 2px 7px;
+  border-radius: 5px;
+  flex-shrink: 0;
+}
+
+.comboboxOptMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.comboboxOptAero {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-700);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.comboboxOptRoute {
+  font-size: 0.77rem;
+  color: var(--text-500);
+}
+
+.comboboxOptDate {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.71rem;
+  color: var(--text-400);
+}
+
+/* Lado derecho de la opción */
+.comboboxOptRight {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.comboboxOptBadge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 99px;
+  white-space: nowrap;
+}
+
+.comboboxCheck {
+  color: var(--rol-lider);
+  flex-shrink: 0;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PROVEEDOR COMBOBOX — hotel / transporte / restaurante
+   ══════════════════════════════════════════════════════════════ */
+
+.proveedorTrigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+  font-family: var(--font-body);
+  text-align: left;
+  min-height: 44px;
+}
+
+.proveedorTrigger:hover {
+  border-color: var(--border-hover, #9ca3af);
+}
+
+/* Proveedor seleccionado dentro del trigger */
+.proveedorSelected {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.proveedorIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.proveedorNombre {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-900);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Opción dentro del proveedor dropdown */
+.proveedorOption {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.875rem;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  border-left: 3px solid transparent;
+  cursor: pointer;
+  font-family: var(--font-body);
+  text-align: left;
+  transition: background 0.1s;
+}
+
+.proveedorOption:last-child {
+  border-bottom: none;
+}
+.proveedorOption:hover {
+  background: var(--bg);
+}
+
+.proveedorOptNone {
+  font-size: 0.82rem;
+  color: var(--text-400);
+  font-style: italic;
+  flex: 1;
+}
+
+.proveedorOptIcon {
+  display: flex;
+  flex-shrink: 0;
+}
+
+.proveedorOptNombre {
+  font-size: 0.85rem;
+  color: var(--text-800);
+  flex: 1;
+}
+
+/* ══════════════════════════════════════════════════════════
+   MULTI-RECURSO — secciones dinámicas (hotel / trans / rest)
+   ══════════════════════════════════════════════════════════ */
+
+/* Contenedor de cada sección (reemplaza el .card dentro de recursosGrid) */
+.recursoSeccion {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 1rem;
+}
+
+/* Header de la sección: título + botón "Agregar otro" */
+.recursoSeccionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* Lista de items (uno por proveedor del mismo tipo) */
+.recursosList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Item individual — fondo ligeramente diferente para distinguirlos */
+.recursoItem {
+  background: var(--bg, #f9fafb);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Header del item (solo visible cuando hay 2+): "Hotel 2" + botón Quitar */
+.recursoItemHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.recursoItemLabel {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-500);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Botón "+ Agregar otro hotel/transporte/restaurante" */
+.addResourceBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.875rem;
+  background: transparent;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: var(--font-body);
+  color: var(--text-600);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.addResourceBtn:hover {
+  border-color: var(--rol-lider, #7c3aed);
+  color: var(--rol-lider, #7c3aed);
+  background: color-mix(in srgb, var(--rol-lider, #7c3aed) 6%, transparent);
+}
+
+/* Botón "✕ Quitar" dentro del item */
+.removeResourceBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.625rem;
+  background: transparent;
+  border: 1px solid #fca5a5;
+  border-radius: var(--r-md);
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: var(--font-body);
+  color: #dc2626;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.removeResourceBtn:hover {
+  background: #fee2e2;
+  border-color: #dc2626;
+}
+
+/* Responsive: en móvil el header de sección apila verticalmente */
+@media (max-width: 640px) {
+  .recursoSeccionHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .addResourceBtn {
+    width: 100%;
+    justify-content: center;
+  }
+}

@@ -12,6 +12,11 @@ import {
   User,
   Package,
   AlertCircle,
+  Plus,
+  X,
+  ChevronDown,
+  Search,
+  Check,
 } from "lucide-react";
 import { useVuelos } from "../../hooks/useVuelos";
 import { useProveedores } from "../../hooks/useProveedores";
@@ -37,57 +42,530 @@ const BADGE_MAP = {
   REPROGRAMADO: "warning",
   PROGRAMADO: "info",
 };
+
+const BADGE_COLORS = {
+  CANCELACION: "#dc2626",
+  DEMORA: "#d97706",
+  REPROGRAMADO: "#7c3aed",
+  PROGRAMADO: "#2563eb",
+};
 const HOY = new Date().toISOString().slice(0, 10);
 
+/* ── CAMBIO 1: plantillas vacías por tipo ── */
+const EMPTY_HOTEL = { hotelId: "", simples: 0, dobles: 0, matrimoniales: 0 };
+const EMPTY_TRANS = { transporteId: "", transCapacidad: 0 };
+const EMPTY_REST = { restauranteId: "", restCapacidad: 0 };
+
+/* EMPTY_REC ahora contiene arrays en vez de un único proveedor por tipo */
 const EMPTY_REC = {
-  hotelId: "",
-  simples: 0,
-  dobles: 0,
-  matrimoniales: 0,
-  transporteId: "",
-  transCapacidad: 0,
-  restauranteId: "",
-  restCapacidad: 0,
+  hoteles: [{ ...EMPTY_HOTEL }],
+  transportes: [{ ...EMPTY_TRANS }],
+  restaurantes: [{ ...EMPTY_REST }],
 };
 
+/* ════════════════════════════════════════════════════════
+   COMPONENTE: VueloCombobox
+   Selector moderno para vuelos con búsqueda y tarjetas
+   ════════════════════════════════════════════════════════ */
+function VueloCombobox({ vuelos, value, onChange, error }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const ref = useRef(null);
+  const inputRef = useRef(null);
+
+  const selected = vuelos.find((v) => String(v.id) === String(value));
+
+  const filtered = vuelos.filter((v) => {
+    if (!query) return true;
+    const q = query.toLowerCase();
+    return (
+      v.codigoVuelo?.toLowerCase().includes(q) ||
+      v.aerolinea?.toLowerCase().includes(q) ||
+      v.origen?.toLowerCase().includes(q) ||
+      v.destino?.toLowerCase().includes(q) ||
+      v.tipoContingencia?.toLowerCase().includes(q)
+    );
+  });
+
+  // Cerrar al hacer click fuera
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  // Foco en search al abrir
+  useEffect(() => {
+    if (open) setTimeout(() => inputRef.current?.focus(), 50);
+  }, [open]);
+
+  const handleSelect = (v) => {
+    onChange(String(v.id));
+    setOpen(false);
+    setQuery("");
+  };
+
+  const handleClear = (e) => {
+    e.stopPropagation();
+    onChange("");
+    setOpen(false);
+    setQuery("");
+  };
+
+  return (
+    <div className={styles.comboboxWrap} ref={ref}>
+      {/* Trigger */}
+      <button
+        type="button"
+        className={[
+          styles.comboboxTrigger,
+          error ? styles.comboboxError : "",
+          open ? styles.comboboxOpen : "",
+        ].join(" ")}
+        onClick={() => setOpen((o) => !o)}
+      >
+        {selected ? (
+          <div className={styles.comboboxSelected}>
+            <span className={styles.comboboxFlightBadge}>
+              <Plane size={12} />
+              {selected.codigoVuelo}
+            </span>
+            <span className={styles.comboboxFlightAero}>
+              {selected.aerolinea}
+            </span>
+            <span className={styles.comboboxFlightRoute}>
+              {selected.origen} → {selected.destino}
+            </span>
+            <span
+              className={styles.comboboxContBadge}
+              style={{
+                background: BADGE_COLORS[selected.tipoContingencia] + "18",
+                color: BADGE_COLORS[selected.tipoContingencia],
+              }}
+            >
+              {selected.tipoContingencia}
+            </span>
+          </div>
+        ) : (
+          <span className={styles.comboboxPlaceholder}>
+            <Plane size={15} />
+            Selecciona un vuelo del itinerario
+          </span>
+        )}
+        <div className={styles.comboboxActions}>
+          {selected && (
+            <span
+              className={styles.comboboxClear}
+              onClick={handleClear}
+              title="Limpiar"
+            >
+              <X size={13} />
+            </span>
+          )}
+          <ChevronDown
+            size={15}
+            className={[
+              styles.comboboxChevron,
+              open ? styles.comboboxChevronUp : "",
+            ].join(" ")}
+          />
+        </div>
+      </button>
+
+      {/* Dropdown */}
+      {open && (
+        <div className={styles.comboboxDropdown}>
+          {/* Search */}
+          <div className={styles.comboboxSearch}>
+            <Search size={14} />
+            <input
+              ref={inputRef}
+              className={styles.comboboxSearchInput}
+              placeholder="Buscar por código, aerolínea, ruta..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            {query && (
+              <button
+                className={styles.comboboxSearchClear}
+                onClick={() => setQuery("")}
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
+
+          {/* Contador */}
+          <div className={styles.comboboxCount}>
+            {filtered.length} vuelo{filtered.length !== 1 ? "s" : ""}
+            {query ? ` para "${query}"` : " disponibles"}
+          </div>
+
+          {/* Lista */}
+          <div className={styles.comboboxList}>
+            {filtered.length === 0 ? (
+              <div className={styles.comboboxEmpty}>
+                <Plane size={28} />
+                <span>Sin resultados</span>
+              </div>
+            ) : (
+              filtered.map((v) => {
+                const isSel = String(v.id) === String(value);
+                const color = BADGE_COLORS[v.tipoContingencia] ?? "#6b7280";
+                return (
+                  <button
+                    key={v.id}
+                    type="button"
+                    className={[
+                      styles.comboboxOption,
+                      isSel ? styles.comboboxOptionSel : "",
+                    ].join(" ")}
+                    onClick={() => handleSelect(v)}
+                  >
+                    <div className={styles.comboboxOptLeft}>
+                      <div className={styles.comboboxOptCode}>
+                        <Plane size={11} />
+                        {v.codigoVuelo}
+                      </div>
+                      <div className={styles.comboboxOptMeta}>
+                        <span className={styles.comboboxOptAero}>
+                          {v.aerolinea}
+                        </span>
+                        <span className={styles.comboboxOptRoute}>
+                          {v.origen} → {v.destino}
+                        </span>
+                        <span className={styles.comboboxOptDate}>
+                          <Calendar size={10} /> {v.fechaVuelo?.slice(0, 10)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className={styles.comboboxOptRight}>
+                      <span
+                        className={styles.comboboxOptBadge}
+                        style={{
+                          background: color + "18",
+                          color,
+                          border: `1px solid ${color}40`,
+                        }}
+                      >
+                        {v.tipoContingencia}
+                      </span>
+                      {isSel && (
+                        <Check size={14} className={styles.comboboxCheck} />
+                      )}
+                    </div>
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <p className={styles.fieldErr}>
+          <AlertCircle size={13} /> {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════
+   COMPONENTE: ProveedorCombobox
+   Selector para hotel / transporte / restaurante
+   ════════════════════════════════════════════════════════ */
+function ProveedorCombobox({
+  opciones,
+  value,
+  onChange,
+  placeholder,
+  icon: Icon,
+  accentColor,
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const ref = useRef(null);
+  const inputRef = useRef(null);
+
+  const selected = opciones.find((o) => String(o.id) === String(value));
+  const filtered = opciones.filter(
+    (o) => !query || o.nombre?.toLowerCase().includes(query.toLowerCase()),
+  );
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  useEffect(() => {
+    if (open) setTimeout(() => inputRef.current?.focus(), 50);
+  }, [open]);
+
+  const handleSelect = (o) => {
+    onChange(String(o.id));
+    setOpen(false);
+    setQuery("");
+  };
+
+  const handleClear = (e) => {
+    e.stopPropagation();
+    onChange("");
+    setOpen(false);
+    setQuery("");
+  };
+
+  return (
+    <div className={styles.comboboxWrap} ref={ref}>
+      <button
+        type="button"
+        className={[
+          styles.proveedorTrigger,
+          open ? styles.comboboxOpen : "",
+        ].join(" ")}
+        style={open || selected ? { borderColor: accentColor + "60" } : {}}
+        onClick={() => setOpen((o) => !o)}
+      >
+        {selected ? (
+          <div className={styles.proveedorSelected}>
+            <span
+              className={styles.proveedorIcon}
+              style={{ background: accentColor + "14", color: accentColor }}
+            >
+              <Icon size={14} />
+            </span>
+            <span className={styles.proveedorNombre}>{selected.nombre}</span>
+          </div>
+        ) : (
+          <span className={styles.comboboxPlaceholder}>
+            <Icon size={14} />
+            {placeholder}
+          </span>
+        )}
+        <div className={styles.comboboxActions}>
+          {selected && (
+            <span
+              className={styles.comboboxClear}
+              onClick={handleClear}
+              title="Quitar selección"
+            >
+              <X size={13} />
+            </span>
+          )}
+          <ChevronDown
+            size={14}
+            className={[
+              styles.comboboxChevron,
+              open ? styles.comboboxChevronUp : "",
+            ].join(" ")}
+          />
+        </div>
+      </button>
+
+      {open && (
+        <div className={styles.comboboxDropdown}>
+          <div className={styles.comboboxSearch}>
+            <Search size={13} />
+            <input
+              ref={inputRef}
+              className={styles.comboboxSearchInput}
+              placeholder="Buscar proveedor..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            {query && (
+              <button
+                className={styles.comboboxSearchClear}
+                onClick={() => setQuery("")}
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
+
+          {/* Opción ninguno */}
+          <button
+            type="button"
+            className={[
+              styles.proveedorOption,
+              !value ? styles.comboboxOptionSel : "",
+            ].join(" ")}
+            onClick={() => {
+              onChange("");
+              setOpen(false);
+              setQuery("");
+            }}
+          >
+            <span className={styles.proveedorOptNone}>Sin asignar</span>
+            {!value && <Check size={13} className={styles.comboboxCheck} />}
+          </button>
+
+          <div className={styles.comboboxList}>
+            {filtered.length === 0 ? (
+              <div className={styles.comboboxEmpty}>
+                <Icon size={22} />
+                <span>Sin resultados</span>
+              </div>
+            ) : (
+              filtered.map((o) => {
+                const isSel = String(o.id) === String(value);
+                return (
+                  <button
+                    key={o.id}
+                    type="button"
+                    className={[
+                      styles.proveedorOption,
+                      isSel ? styles.comboboxOptionSel : "",
+                    ].join(" ")}
+                    onClick={() => handleSelect(o)}
+                    style={
+                      isSel ? { borderLeft: `3px solid ${accentColor}` } : {}
+                    }
+                  >
+                    <span
+                      className={styles.proveedorOptIcon}
+                      style={{ color: accentColor }}
+                    >
+                      <Icon size={13} />
+                    </span>
+                    <span className={styles.proveedorOptNombre}>
+                      {o.nombre}
+                    </span>
+                    {isSel && (
+                      <Check size={13} className={styles.comboboxCheck} />
+                    )}
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── CAMBIO 2: buildRecursos itera sobre los arrays ── */
 function buildRecursos(rec) {
   const list = [];
-  if (rec.hotelId)
-    list.push({
-      proveedorId: Number(rec.hotelId),
-      habitacionesSimples: Number(rec.simples) || 0,
-      habitacionesDobles: Number(rec.dobles) || 0,
-      habitacionesMatrimoniales: Number(rec.matrimoniales) || 0,
-    });
-  if (rec.transporteId)
-    list.push({
-      proveedorId: Number(rec.transporteId),
-      capacidadTotal: Number(rec.transCapacidad) || 0,
-    });
-  if (rec.restauranteId)
-    list.push({
-      proveedorId: Number(rec.restauranteId),
-      capacidadTotal: Number(rec.restCapacidad) || 0,
-    });
+
+  rec.hoteles.forEach((h) => {
+    if (h.hotelId)
+      list.push({
+        proveedorId: Number(h.hotelId),
+        habitacionesSimples: Number(h.simples) || 0,
+        habitacionesDobles: Number(h.dobles) || 0,
+        habitacionesMatrimoniales: Number(h.matrimoniales) || 0,
+      });
+  });
+
+  rec.transportes.forEach((t) => {
+    if (t.transporteId)
+      list.push({
+        proveedorId: Number(t.transporteId),
+        capacidadTotal: Number(t.transCapacidad) || 0,
+      });
+  });
+
+  rec.restaurantes.forEach((rt) => {
+    if (rt.restauranteId)
+      list.push({
+        proveedorId: Number(rt.restauranteId),
+        capacidadTotal: Number(rt.restCapacidad) || 0,
+      });
+  });
+
   return list;
 }
 
+/* ── CAMBIO 3: recFromRegistro usa .filter() para preservar todos los recursos ── */
 function recFromRegistro(r) {
   if (!r?.recursos?.length) return EMPTY_REC;
-  const hotel = r.recursos.find((x) => x.proveedorTipo === "HOTEL");
-  const trans = r.recursos.find((x) => x.proveedorTipo === "TRANSPORTE");
-  const rest = r.recursos.find((x) => x.proveedorTipo === "RESTAURANTE");
+
+  const hoteles = r.recursos
+    .filter((x) => x.proveedorTipo === "HOTEL")
+    .map((h) => ({
+      hotelId: String(h.proveedorId),
+      simples: h.habitacionesSimples ?? 0,
+      dobles: h.habitacionesDobles ?? 0,
+      matrimoniales: h.habitacionesMatrimoniales ?? 0,
+    }));
+
+  const transportes = r.recursos
+    .filter((x) => x.proveedorTipo === "TRANSPORTE")
+    .map((t) => ({
+      transporteId: String(t.proveedorId),
+      transCapacidad: t.capacidadTotal ?? 0,
+    }));
+
+  const restaurantes = r.recursos
+    .filter((x) => x.proveedorTipo === "RESTAURANTE")
+    .map((rt) => ({
+      restauranteId: String(rt.proveedorId),
+      restCapacidad: rt.capacidadTotal ?? 0,
+    }));
+
   return {
-    hotelId: hotel ? String(hotel.proveedorId) : "",
-    simples: hotel?.habitacionesSimples ?? 0,
-    dobles: hotel?.habitacionesDobles ?? 0,
-    matrimoniales: hotel?.habitacionesMatrimoniales ?? 0,
-    transporteId: trans ? String(trans.proveedorId) : "",
-    transCapacidad: trans?.capacidadTotal ?? 0,
-    restauranteId: rest ? String(rest.proveedorId) : "",
-    restCapacidad: rest?.capacidadTotal ?? 0,
+    hoteles: hoteles.length ? hoteles : [{ ...EMPTY_HOTEL }],
+    transportes: transportes.length ? transportes : [{ ...EMPTY_TRANS }],
+    restaurantes: restaurantes.length ? restaurantes : [{ ...EMPTY_REST }],
   };
 }
+
+// const EMPTY_REC = {
+//   hotelId: "",
+//   simples: 0,
+//   dobles: 0,
+//   matrimoniales: 0,
+//   transporteId: "",
+//   transCapacidad: 0,
+//   restauranteId: "",
+//   restCapacidad: 0,
+// };
+
+// function buildRecursos(rec) {
+//   const list = [];
+//   if (rec.hotelId)
+//     list.push({
+//       proveedorId: Number(rec.hotelId),
+//       habitacionesSimples: Number(rec.simples) || 0,
+//       habitacionesDobles: Number(rec.dobles) || 0,
+//       habitacionesMatrimoniales: Number(rec.matrimoniales) || 0,
+//     });
+//   if (rec.transporteId)
+//     list.push({
+//       proveedorId: Number(rec.transporteId),
+//       capacidadTotal: Number(rec.transCapacidad) || 0,
+//     });
+//   if (rec.restauranteId)
+//     list.push({
+//       proveedorId: Number(rec.restauranteId),
+//       capacidadTotal: Number(rec.restCapacidad) || 0,
+//     });
+//   return list;
+// }
+
+// function recFromRegistro(r) {
+//   if (!r?.recursos?.length) return EMPTY_REC;
+//   const hotel = r.recursos.find((x) => x.proveedorTipo === "HOTEL");
+//   const trans = r.recursos.find((x) => x.proveedorTipo === "TRANSPORTE");
+//   const rest = r.recursos.find((x) => x.proveedorTipo === "RESTAURANTE");
+//   return {
+//     hotelId: hotel ? String(hotel.proveedorId) : "",
+//     simples: hotel?.habitacionesSimples ?? 0,
+//     dobles: hotel?.habitacionesDobles ?? 0,
+//     matrimoniales: hotel?.habitacionesMatrimoniales ?? 0,
+//     transporteId: trans ? String(trans.proveedorId) : "",
+//     transCapacidad: trans?.capacidadTotal ?? 0,
+//     restauranteId: rest ? String(rest.proveedorId) : "",
+//     restCapacidad: rest?.capacidadTotal ?? 0,
+//   };
+// }
 
 /* ── Sub-componente: Card de un registro diario ── */
 function RegistroCard({ r, onEditar, onEliminar }) {
@@ -266,8 +744,72 @@ export default function LiderVueloPage() {
   }, [vueloSelId]);
 
   /* ── Helpers de recursos ── */
-  const setR = (k, v) => setRec((r) => ({ ...r, [k]: v }));
-  const totalHab = rec.simples + rec.dobles + rec.matrimoniales;
+  //const setR = (k, v) => setRec((r) => ({ ...r, [k]: v }));
+  /* ── CAMBIO 4: helpers para arrays de recursos ── */
+
+  /* Actualiza un campo de un item dentro de hoteles/transportes/restaurantes */
+  const setHotel = (idx, field, val) =>
+    setRec((prev) => {
+      const copy = [...prev.hoteles];
+      copy[idx] = { ...copy[idx], [field]: val };
+      return { ...prev, hoteles: copy };
+    });
+
+  const setTrans = (idx, field, val) =>
+    setRec((prev) => {
+      const copy = [...prev.transportes];
+      copy[idx] = { ...copy[idx], [field]: val };
+      return { ...prev, transportes: copy };
+    });
+
+  const setRest = (idx, field, val) =>
+    setRec((prev) => {
+      const copy = [...prev.restaurantes];
+      copy[idx] = { ...copy[idx], [field]: val };
+      return { ...prev, restaurantes: copy };
+    });
+
+  /* Agrega un nuevo item vacío */
+  const addHotel = () =>
+    setRec((p) => ({ ...p, hoteles: [...p.hoteles, { ...EMPTY_HOTEL }] }));
+  const addTrans = () =>
+    setRec((p) => ({
+      ...p,
+      transportes: [...p.transportes, { ...EMPTY_TRANS }],
+    }));
+  const addRest = () =>
+    setRec((p) => ({
+      ...p,
+      restaurantes: [...p.restaurantes, { ...EMPTY_REST }],
+    }));
+
+  /* Quita un item por índice (mínimo siempre queda 1) */
+  const removeHotel = (idx) =>
+    setRec((p) => ({
+      ...p,
+      hoteles:
+        p.hoteles.length > 1
+          ? p.hoteles.filter((_, i) => i !== idx)
+          : [{ ...EMPTY_HOTEL }],
+    }));
+  const removeTrans = (idx) =>
+    setRec((p) => ({
+      ...p,
+      transportes:
+        p.transportes.length > 1
+          ? p.transportes.filter((_, i) => i !== idx)
+          : [{ ...EMPTY_TRANS }],
+    }));
+  const removeRest = (idx) =>
+    setRec((p) => ({
+      ...p,
+      restaurantes:
+        p.restaurantes.length > 1
+          ? p.restaurantes.filter((_, i) => i !== idx)
+          : [{ ...EMPTY_REST }],
+    }));
+
+  //const totalHab = rec.simples + rec.dobles + rec.matrimoniales;
 
   /* ── Validación ── */
   const validate = () => {
@@ -381,9 +923,7 @@ export default function LiderVueloPage() {
         )}
       </div>
 
-      {/* ══════════════════════════════════════
-          1 — SELECTOR DE ITINERARIO (combobox)
-          ══════════════════════════════════════ */}
+      {/* 1 — SELECTOR DE VUELO */}
       <div className={styles.card}>
         <h2 className={styles.cardTitle}>✈ Itinerario de vuelos</h2>
         <p className={styles.cardNote}>
@@ -391,29 +931,13 @@ export default function LiderVueloPage() {
           campos se autocompletan automáticamente.
         </p>
 
-        <select
-          className={[
-            styles.select,
-            errors.vuelo ? styles.selectError : "",
-          ].join(" ")}
+        <VueloCombobox
+          vuelos={vuelos}
           value={vueloSelId}
-          onChange={(e) => setVueloSelId(e.target.value)}
-        >
-          <option value="">— Selecciona un vuelo del itinerario —</option>
-          {vuelos.map((v) => (
-            <option key={v.id} value={v.id}>
-              ✈ {v.codigoVuelo} · {v.aerolinea} · {v.origen} → {v.destino} ·{" "}
-              {v.fechaVuelo?.slice(0, 10)} · {v.tipoContingencia}
-            </option>
-          ))}
-        </select>
-        {errors.vuelo && (
-          <p className={styles.fieldErr}>
-            <AlertCircle size={13} /> {errors.vuelo}
-          </p>
-        )}
+          onChange={setVueloSelId}
+          error={errors.vuelo}
+        />
 
-        {/* Vista previa del vuelo seleccionado */}
         {vueloSel && (
           <div className={styles.vueloPreview}>
             <div className={styles.vpGrid}>
@@ -457,9 +981,7 @@ export default function LiderVueloPage() {
         )}
       </div>
 
-      {/* ══════════════════════════════════════
-          2 — FECHA + OBSERVACIONES DEL REGISTRO
-          ══════════════════════════════════════ */}
+      {/* 2 — DATOS DEL REGISTRO */}
       {vueloSel && (
         <div className={styles.card}>
           <h2 className={styles.cardTitle}>📋 Datos del Registro</h2>
@@ -514,130 +1036,209 @@ export default function LiderVueloPage() {
         <span className={styles.dividerLine} />
       </div>
 
-      <div className={styles.recursosGrid}>
-        {/* HOTEL */}
-        <div className={styles.card}>
+      {/* HOTEL */}
+      <div className={styles.recursoSeccion}>
+        <div className={styles.recursoSeccionHeader}>
           <div className={styles.resourceHeader}>
-            <Hotel size={18} color="var(--rol-lider)" />
+            <Hotel size={18} color="#16a34a" />
             <h3 className={styles.cardTitle}>Hotel</h3>
           </div>
-          <select
-            className={styles.select}
-            value={rec.hotelId}
-            onChange={(e) => setR("hotelId", e.target.value)}
-          >
-            <option value="">Sin hotel asignado</option>
-            {hoteles.map((h) => (
-              <option key={h.id} value={h.id}>
-                {h.nombre}
-              </option>
-            ))}
-          </select>
-          {rec.hotelId && (
-            <div className={styles.habGrid}>
-              {[
-                { k: "simples", l: "Hab. Simples", d: "1 persona" },
-                { k: "dobles", l: "Hab. Dobles", d: "2 camas" },
-                { k: "matrimoniales", l: "Matrimoniales", d: "1 cama doble" },
-              ].map(({ k, l, d }) => (
-                <div key={k} className={styles.habRow}>
-                  <div>
-                    <span className={styles.habLabel}>{l}</span>
-                    <span className={styles.habDesc}>{d}</span>
+          <button className={styles.addResourceBtn} onClick={addHotel}>
+            <Plus size={14} /> Agregar otro hotel
+          </button>
+        </div>
+        <div className={styles.recursosList}>
+          {rec.hoteles.map((h, idx) => {
+            const totalHab = h.simples + h.dobles + h.matrimoniales;
+            return (
+              <div key={idx} className={styles.recursoItem}>
+                {rec.hoteles.length > 1 && (
+                  <div className={styles.recursoItemHeader}>
+                    <span className={styles.recursoItemLabel}>
+                      Hotel {idx + 1}
+                    </span>
+                    <button
+                      className={styles.removeResourceBtn}
+                      onClick={() => removeHotel(idx)}
+                    >
+                      <X size={13} /> Quitar
+                    </button>
                   </div>
+                )}
+                <ProveedorCombobox
+                  opciones={hoteles}
+                  value={h.hotelId}
+                  onChange={(v) => setHotel(idx, "hotelId", v)}
+                  placeholder="Sin hotel asignado"
+                  icon={Hotel}
+                  accentColor="#16a34a"
+                />
+                {h.hotelId && (
+                  <div className={styles.habGrid}>
+                    {[
+                      { k: "simples", l: "Hab. Simples", d: "1 persona" },
+                      { k: "dobles", l: "Hab. Dobles", d: "2 camas" },
+                      {
+                        k: "matrimoniales",
+                        l: "Matrimoniales",
+                        d: "1 cama doble",
+                      },
+                    ].map(({ k, l, d }) => (
+                      <div key={k} className={styles.habRow}>
+                        <div>
+                          <span className={styles.habLabel}>{l}</span>
+                          <span className={styles.habDesc}>{d}</span>
+                        </div>
+                        <input
+                          type="number"
+                          min="0"
+                          value={h[k]}
+                          onChange={(e) =>
+                            setHotel(
+                              idx,
+                              k,
+                              Math.max(0, Number(e.target.value)),
+                            )
+                          }
+                          className={styles.numInput}
+                        />
+                      </div>
+                    ))}
+                    {totalHab > 0 && (
+                      <p className={styles.resumenBar}>
+                        Total: {totalHab} hab. — {h.simples}S · {h.dobles}D ·{" "}
+                        {h.matrimoniales}M
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* TRANSPORTE */}
+      <div className={styles.recursoSeccion}>
+        <div className={styles.recursoSeccionHeader}>
+          <div className={styles.resourceHeader}>
+            <Bus size={18} color="#3b82f6" />
+            <h3 className={styles.cardTitle}>Transporte</h3>
+          </div>
+          <button className={styles.addResourceBtn} onClick={addTrans}>
+            <Plus size={14} /> Agregar otro transporte
+          </button>
+        </div>
+        <div className={styles.recursosList}>
+          {rec.transportes.map((t, idx) => (
+            <div key={idx} className={styles.recursoItem}>
+              {rec.transportes.length > 1 && (
+                <div className={styles.recursoItemHeader}>
+                  <span className={styles.recursoItemLabel}>
+                    Transporte {idx + 1}
+                  </span>
+                  <button
+                    className={styles.removeResourceBtn}
+                    onClick={() => removeTrans(idx)}
+                  >
+                    <X size={13} /> Quitar
+                  </button>
+                </div>
+              )}
+              <ProveedorCombobox
+                opciones={transportes}
+                value={t.transporteId}
+                onChange={(v) => setTrans(idx, "transporteId", v)}
+                placeholder="Sin transporte asignado"
+                icon={Bus}
+                accentColor="#3b82f6"
+              />
+              {t.transporteId && (
+                <div className={styles.field}>
+                  <label className={styles.fieldLabel}>
+                    Capacidad total (pax)
+                  </label>
                   <input
                     type="number"
                     min="0"
-                    value={rec[k]}
+                    value={t.transCapacidad}
                     onChange={(e) =>
-                      setR(k, Math.max(0, Number(e.target.value)))
+                      setTrans(
+                        idx,
+                        "transCapacidad",
+                        Math.max(0, Number(e.target.value)),
+                      )
                     }
+                    placeholder="Ej: 45"
                     className={styles.numInput}
+                    style={{ width: "100%", textAlign: "left" }}
                   />
                 </div>
-              ))}
-              {totalHab > 0 && (
-                <p className={styles.resumenBar}>
-                  Total: {totalHab} hab. — {rec.simples}S · {rec.dobles}D ·{" "}
-                  {rec.matrimoniales}M
-                </p>
               )}
             </div>
-          )}
+          ))}
         </div>
+      </div>
 
-        {/* TRANSPORTE */}
-        <div className={styles.card}>
+      {/* RESTAURANTE */}
+      <div className={styles.recursoSeccion}>
+        <div className={styles.recursoSeccionHeader}>
           <div className={styles.resourceHeader}>
-            <Bus size={18} color="var(--rol-lider)" />
-            <h3 className={styles.cardTitle}>Transporte</h3>
-          </div>
-          <select
-            className={styles.select}
-            value={rec.transporteId}
-            onChange={(e) => setR("transporteId", e.target.value)}
-          >
-            <option value="">Sin transporte asignado</option>
-            {transportes.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.nombre}
-              </option>
-            ))}
-          </select>
-          {rec.transporteId && (
-            <div className={styles.field}>
-              <label className={styles.fieldLabel}>Capacidad total (pax)</label>
-              <input
-                type="number"
-                min="0"
-                value={rec.transCapacidad}
-                onChange={(e) =>
-                  setR("transCapacidad", Math.max(0, Number(e.target.value)))
-                }
-                placeholder="Ej: 45"
-                className={styles.numInput}
-                style={{ width: "100%", textAlign: "left" }}
-              />
-            </div>
-          )}
-        </div>
-
-        {/* RESTAURANTE */}
-        <div className={styles.card}>
-          <div className={styles.resourceHeader}>
-            <UtensilsCrossed size={18} color="var(--rol-lider)" />
+            <UtensilsCrossed size={18} color="#f97316" />
             <h3 className={styles.cardTitle}>Restaurante</h3>
           </div>
-          <select
-            className={styles.select}
-            value={rec.restauranteId}
-            onChange={(e) => setR("restauranteId", e.target.value)}
-          >
-            <option value="">Sin restaurante asignado</option>
-            {restaurantes.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.nombre}
-              </option>
-            ))}
-          </select>
-          {rec.restauranteId && (
-            <div className={styles.field}>
-              <label className={styles.fieldLabel}>
-                Capacidad total (cubiertos)
-              </label>
-              <input
-                type="number"
-                min="0"
-                value={rec.restCapacidad}
-                onChange={(e) =>
-                  setR("restCapacidad", Math.max(0, Number(e.target.value)))
-                }
-                placeholder="Ej: 80"
-                className={styles.numInput}
-                style={{ width: "100%", textAlign: "left" }}
+          <button className={styles.addResourceBtn} onClick={addRest}>
+            <Plus size={14} /> Agregar otro restaurante
+          </button>
+        </div>
+        <div className={styles.recursosList}>
+          {rec.restaurantes.map((rt, idx) => (
+            <div key={idx} className={styles.recursoItem}>
+              {rec.restaurantes.length > 1 && (
+                <div className={styles.recursoItemHeader}>
+                  <span className={styles.recursoItemLabel}>
+                    Restaurante {idx + 1}
+                  </span>
+                  <button
+                    className={styles.removeResourceBtn}
+                    onClick={() => removeRest(idx)}
+                  >
+                    <X size={13} /> Quitar
+                  </button>
+                </div>
+              )}
+              <ProveedorCombobox
+                opciones={restaurantes}
+                value={rt.restauranteId}
+                onChange={(v) => setRest(idx, "restauranteId", v)}
+                placeholder="Sin restaurante asignado"
+                icon={UtensilsCrossed}
+                accentColor="#f97316"
               />
+              {rt.restauranteId && (
+                <div className={styles.field}>
+                  <label className={styles.fieldLabel}>
+                    Capacidad total (cubiertos)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={rt.restCapacidad}
+                    onChange={(e) =>
+                      setRest(
+                        idx,
+                        "restCapacidad",
+                        Math.max(0, Number(e.target.value)),
+                      )
+                    }
+                    placeholder="Ej: 80"
+                    className={styles.numInput}
+                    style={{ width: "100%", textAlign: "left" }}
+                  />
+                </div>
+              )}
             </div>
-          )}
+          ))}
         </div>
       </div>
 
