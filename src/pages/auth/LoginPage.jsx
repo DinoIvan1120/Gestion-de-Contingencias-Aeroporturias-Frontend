@@ -189,7 +189,7 @@ export default function LoginPage() {
             </div>
             <div>
               <p className={styles.brandName}>
-                <span>SAASA</span> - IntegrityFlow
+                <span>SAASA</span> - Innovación
               </p>
               <p className={styles.brandTagline}>Plus Ultra Airlines</p>
             </div>

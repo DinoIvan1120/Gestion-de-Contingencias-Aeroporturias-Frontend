@@ -48,7 +48,7 @@ export default function Topbar({ onMenuClick }) {
             <Menu size={22} color="#fff" />
           </button>
           <div className={styles.title}>
-            <span className={styles.appName}>IntegrityFlow</span>
+            <span className={styles.appName}>Innovación</span>
             {envLabel && <span className={styles.envBadge}>{envLabel}</span>}
           </div>
         </div>
