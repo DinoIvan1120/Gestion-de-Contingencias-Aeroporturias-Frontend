@@ -1036,209 +1036,211 @@ export default function LiderVueloPage() {
         <span className={styles.dividerLine} />
       </div>
 
-      {/* HOTEL */}
-      <div className={styles.recursoSeccion}>
-        <div className={styles.recursoSeccionHeader}>
-          <div className={styles.resourceHeader}>
-            <Hotel size={18} color="#16a34a" />
-            <h3 className={styles.cardTitle}>Hotel</h3>
+      <div className={styles.recursosGrid}>
+        {/* HOTEL */}
+        <div className={styles.card}>
+          <div className={styles.recursoSeccionHeader}>
+            <div className={styles.resourceHeader}>
+              <Hotel size={18} color="#16a34a" />
+              <h3 className={styles.cardTitle}>Hotel</h3>
+            </div>
+            <button className={styles.addResourceBtn} onClick={addHotel}>
+              <Plus size={14} /> Agregar
+            </button>
           </div>
-          <button className={styles.addResourceBtn} onClick={addHotel}>
-            <Plus size={14} /> Agregar otro hotel
-          </button>
+          <div className={styles.recursosList}>
+            {rec.hoteles.map((h, idx) => {
+              const totalHab = h.simples + h.dobles + h.matrimoniales;
+              return (
+                <div key={idx} className={styles.recursoItem}>
+                  {rec.hoteles.length > 1 && (
+                    <div className={styles.recursoItemHeader}>
+                      <span className={styles.recursoItemLabel}>
+                        Hotel {idx + 1}
+                      </span>
+                      <button
+                        className={styles.removeResourceBtn}
+                        onClick={() => removeHotel(idx)}
+                      >
+                        <X size={13} /> Quitar
+                      </button>
+                    </div>
+                  )}
+                  <ProveedorCombobox
+                    opciones={hoteles}
+                    value={h.hotelId}
+                    onChange={(v) => setHotel(idx, "hotelId", v)}
+                    placeholder="Sin hotel asignado"
+                    icon={Hotel}
+                    accentColor="#16a34a"
+                  />
+                  {h.hotelId && (
+                    <div className={styles.habGrid}>
+                      {[
+                        { k: "simples", l: "Hab. Simples", d: "1 persona" },
+                        { k: "dobles", l: "Hab. Dobles", d: "2 camas" },
+                        {
+                          k: "matrimoniales",
+                          l: "Matrimoniales",
+                          d: "1 cama doble",
+                        },
+                      ].map(({ k, l, d }) => (
+                        <div key={k} className={styles.habRow}>
+                          <div>
+                            <span className={styles.habLabel}>{l}</span>
+                            <span className={styles.habDesc}>{d}</span>
+                          </div>
+                          <input
+                            type="number"
+                            min="0"
+                            value={h[k]}
+                            onChange={(e) =>
+                              setHotel(
+                                idx,
+                                k,
+                                Math.max(0, Number(e.target.value)),
+                              )
+                            }
+                            className={styles.numInput}
+                          />
+                        </div>
+                      ))}
+                      {totalHab > 0 && (
+                        <p className={styles.resumenBar}>
+                          Total: {totalHab} hab. — {h.simples}S · {h.dobles}D ·{" "}
+                          {h.matrimoniales}M
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
-        <div className={styles.recursosList}>
-          {rec.hoteles.map((h, idx) => {
-            const totalHab = h.simples + h.dobles + h.matrimoniales;
-            return (
+
+        {/* TRANSPORTE */}
+        <div className={styles.card}>
+          <div className={styles.recursoSeccionHeader}>
+            <div className={styles.resourceHeader}>
+              <Bus size={18} color="#3b82f6" />
+              <h3 className={styles.cardTitle}>Transporte</h3>
+            </div>
+            <button className={styles.addResourceBtn} onClick={addTrans}>
+              <Plus size={14} /> Agregar
+            </button>
+          </div>
+          <div className={styles.recursosList}>
+            {rec.transportes.map((t, idx) => (
               <div key={idx} className={styles.recursoItem}>
-                {rec.hoteles.length > 1 && (
+                {rec.transportes.length > 1 && (
                   <div className={styles.recursoItemHeader}>
                     <span className={styles.recursoItemLabel}>
-                      Hotel {idx + 1}
+                      Transporte {idx + 1}
                     </span>
                     <button
                       className={styles.removeResourceBtn}
-                      onClick={() => removeHotel(idx)}
+                      onClick={() => removeTrans(idx)}
                     >
                       <X size={13} /> Quitar
                     </button>
                   </div>
                 )}
                 <ProveedorCombobox
-                  opciones={hoteles}
-                  value={h.hotelId}
-                  onChange={(v) => setHotel(idx, "hotelId", v)}
-                  placeholder="Sin hotel asignado"
-                  icon={Hotel}
-                  accentColor="#16a34a"
+                  opciones={transportes}
+                  value={t.transporteId}
+                  onChange={(v) => setTrans(idx, "transporteId", v)}
+                  placeholder="Sin transporte asignado"
+                  icon={Bus}
+                  accentColor="#3b82f6"
                 />
-                {h.hotelId && (
-                  <div className={styles.habGrid}>
-                    {[
-                      { k: "simples", l: "Hab. Simples", d: "1 persona" },
-                      { k: "dobles", l: "Hab. Dobles", d: "2 camas" },
-                      {
-                        k: "matrimoniales",
-                        l: "Matrimoniales",
-                        d: "1 cama doble",
-                      },
-                    ].map(({ k, l, d }) => (
-                      <div key={k} className={styles.habRow}>
-                        <div>
-                          <span className={styles.habLabel}>{l}</span>
-                          <span className={styles.habDesc}>{d}</span>
-                        </div>
-                        <input
-                          type="number"
-                          min="0"
-                          value={h[k]}
-                          onChange={(e) =>
-                            setHotel(
-                              idx,
-                              k,
-                              Math.max(0, Number(e.target.value)),
-                            )
-                          }
-                          className={styles.numInput}
-                        />
-                      </div>
-                    ))}
-                    {totalHab > 0 && (
-                      <p className={styles.resumenBar}>
-                        Total: {totalHab} hab. — {h.simples}S · {h.dobles}D ·{" "}
-                        {h.matrimoniales}M
-                      </p>
-                    )}
+                {t.transporteId && (
+                  <div className={styles.field}>
+                    <label className={styles.fieldLabel}>
+                      Capacidad total (pax)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={t.transCapacidad}
+                      onChange={(e) =>
+                        setTrans(
+                          idx,
+                          "transCapacidad",
+                          Math.max(0, Number(e.target.value)),
+                        )
+                      }
+                      placeholder="Ej: 45"
+                      className={styles.numInput}
+                      style={{ width: "100%", textAlign: "left" }}
+                    />
                   </div>
                 )}
               </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* TRANSPORTE */}
-      <div className={styles.recursoSeccion}>
-        <div className={styles.recursoSeccionHeader}>
-          <div className={styles.resourceHeader}>
-            <Bus size={18} color="#3b82f6" />
-            <h3 className={styles.cardTitle}>Transporte</h3>
+            ))}
           </div>
-          <button className={styles.addResourceBtn} onClick={addTrans}>
-            <Plus size={14} /> Agregar otro transporte
-          </button>
         </div>
-        <div className={styles.recursosList}>
-          {rec.transportes.map((t, idx) => (
-            <div key={idx} className={styles.recursoItem}>
-              {rec.transportes.length > 1 && (
-                <div className={styles.recursoItemHeader}>
-                  <span className={styles.recursoItemLabel}>
-                    Transporte {idx + 1}
-                  </span>
-                  <button
-                    className={styles.removeResourceBtn}
-                    onClick={() => removeTrans(idx)}
-                  >
-                    <X size={13} /> Quitar
-                  </button>
-                </div>
-              )}
-              <ProveedorCombobox
-                opciones={transportes}
-                value={t.transporteId}
-                onChange={(v) => setTrans(idx, "transporteId", v)}
-                placeholder="Sin transporte asignado"
-                icon={Bus}
-                accentColor="#3b82f6"
-              />
-              {t.transporteId && (
-                <div className={styles.field}>
-                  <label className={styles.fieldLabel}>
-                    Capacidad total (pax)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={t.transCapacidad}
-                    onChange={(e) =>
-                      setTrans(
-                        idx,
-                        "transCapacidad",
-                        Math.max(0, Number(e.target.value)),
-                      )
-                    }
-                    placeholder="Ej: 45"
-                    className={styles.numInput}
-                    style={{ width: "100%", textAlign: "left" }}
-                  />
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
 
-      {/* RESTAURANTE */}
-      <div className={styles.recursoSeccion}>
-        <div className={styles.recursoSeccionHeader}>
-          <div className={styles.resourceHeader}>
-            <UtensilsCrossed size={18} color="#f97316" />
-            <h3 className={styles.cardTitle}>Restaurante</h3>
-          </div>
-          <button className={styles.addResourceBtn} onClick={addRest}>
-            <Plus size={14} /> Agregar otro restaurante
-          </button>
-        </div>
-        <div className={styles.recursosList}>
-          {rec.restaurantes.map((rt, idx) => (
-            <div key={idx} className={styles.recursoItem}>
-              {rec.restaurantes.length > 1 && (
-                <div className={styles.recursoItemHeader}>
-                  <span className={styles.recursoItemLabel}>
-                    Restaurante {idx + 1}
-                  </span>
-                  <button
-                    className={styles.removeResourceBtn}
-                    onClick={() => removeRest(idx)}
-                  >
-                    <X size={13} /> Quitar
-                  </button>
-                </div>
-              )}
-              <ProveedorCombobox
-                opciones={restaurantes}
-                value={rt.restauranteId}
-                onChange={(v) => setRest(idx, "restauranteId", v)}
-                placeholder="Sin restaurante asignado"
-                icon={UtensilsCrossed}
-                accentColor="#f97316"
-              />
-              {rt.restauranteId && (
-                <div className={styles.field}>
-                  <label className={styles.fieldLabel}>
-                    Capacidad total (cubiertos)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={rt.restCapacidad}
-                    onChange={(e) =>
-                      setRest(
-                        idx,
-                        "restCapacidad",
-                        Math.max(0, Number(e.target.value)),
-                      )
-                    }
-                    placeholder="Ej: 80"
-                    className={styles.numInput}
-                    style={{ width: "100%", textAlign: "left" }}
-                  />
-                </div>
-              )}
+        {/* RESTAURANTE */}
+        <div className={styles.card}>
+          <div className={styles.recursoSeccionHeader}>
+            <div className={styles.resourceHeader}>
+              <UtensilsCrossed size={18} color="#f97316" />
+              <h3 className={styles.cardTitle}>Restaurante</h3>
             </div>
-          ))}
+            <button className={styles.addResourceBtn} onClick={addRest}>
+              <Plus size={14} /> Agregar
+            </button>
+          </div>
+          <div className={styles.recursosList}>
+            {rec.restaurantes.map((rt, idx) => (
+              <div key={idx} className={styles.recursoItem}>
+                {rec.restaurantes.length > 1 && (
+                  <div className={styles.recursoItemHeader}>
+                    <span className={styles.recursoItemLabel}>
+                      Restaurante {idx + 1}
+                    </span>
+                    <button
+                      className={styles.removeResourceBtn}
+                      onClick={() => removeRest(idx)}
+                    >
+                      <X size={13} /> Quitar
+                    </button>
+                  </div>
+                )}
+                <ProveedorCombobox
+                  opciones={restaurantes}
+                  value={rt.restauranteId}
+                  onChange={(v) => setRest(idx, "restauranteId", v)}
+                  placeholder="Sin restaurante asignado"
+                  icon={UtensilsCrossed}
+                  accentColor="#f97316"
+                />
+                {rt.restauranteId && (
+                  <div className={styles.field}>
+                    <label className={styles.fieldLabel}>
+                      Capacidad total (cubiertos)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={rt.restCapacidad}
+                      onChange={(e) =>
+                        setRest(
+                          idx,
+                          "restCapacidad",
+                          Math.max(0, Number(e.target.value)),
+                        )
+                      }
+                      placeholder="Ej: 80"
+                      className={styles.numInput}
+                      style={{ width: "100%", textAlign: "left" }}
+                    />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
