@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
   Plane,
   Hotel,
@@ -690,6 +690,7 @@ export default function LiderVueloPage() {
   const { data: misRegistrosPage, isLoading: loadingHist } = useMisRegistros({
     size: 30,
   });
+
   const misRegistros = misRegistrosPage?.content ?? [];
 
   /* Mutaciones */
@@ -719,6 +720,34 @@ export default function LiderVueloPage() {
     message: "",
   });
   const [confirm, setConfirm] = useState({ open: false, id: null });
+
+  /*
+   ***Proveedores ya asignados en registros de HOY.
+   ***Si estamos editando un registro, sus propios proveedores no se excluyen
+   ***(El Líder debe poder verlos y modificarlos)
+   */
+
+  const proveedoresYaUsados = useMemo(() => {
+    const ids = new Set();
+    registrosHoy.forEach((r) => {
+      if (editId && r.id === editId) return; // no excluir los del registro en edición
+      r.recursos?.forEach((rec) => {
+        if (rec.proveedorId) ids.add(Number(rec.proveedorId));
+      });
+    });
+    return ids;
+  }, [registrosHoy, editId]);
+
+  // Listas filtradas — solo proveedores activos Y sin asignar a otro vuelo hoy
+  const hotelesDisponibles = hoteles.filter(
+    (h) => !proveedoresYaUsados.has(Number(h.id)),
+  );
+  const transportesDisponibles = transportes.filter(
+    (t) => !proveedoresYaUsados.has(Number(t.id)),
+  );
+  const restaurantesDisponibles = restaurantes.filter(
+    (r) => !proveedoresYaUsados.has(Number(r.id)),
+  );
 
   const showModal = (type, title, message) =>
     setModal({ open: true, type, title, message });
@@ -1067,7 +1096,7 @@ export default function LiderVueloPage() {
                     </div>
                   )}
                   <ProveedorCombobox
-                    opciones={hoteles}
+                    opciones={hotelesDisponibles}
                     value={h.hotelId}
                     onChange={(v) => setHotel(idx, "hotelId", v)}
                     placeholder="Sin hotel asignado"
@@ -1147,7 +1176,7 @@ export default function LiderVueloPage() {
                   </div>
                 )}
                 <ProveedorCombobox
-                  opciones={transportes}
+                  opciones={transportesDisponibles}
                   value={t.transporteId}
                   onChange={(v) => setTrans(idx, "transporteId", v)}
                   placeholder="Sin transporte asignado"
@@ -1209,7 +1238,7 @@ export default function LiderVueloPage() {
                   </div>
                 )}
                 <ProveedorCombobox
-                  opciones={restaurantes}
+                  opciones={restaurantesDisponibles}
                   value={rt.restauranteId}
                   onChange={(v) => setRest(idx, "restauranteId", v)}
                   placeholder="Sin restaurante asignado"
