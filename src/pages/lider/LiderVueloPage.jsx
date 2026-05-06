@@ -749,6 +749,22 @@ export default function LiderVueloPage() {
     (r) => !proveedoresYaUsados.has(Number(r.id)),
   );
 
+  // IDs de vuelos que ya tienen registro guardado hoy
+  const vuelosYaRegistrados = useMemo(() => {
+    const ids = new Set();
+    registrosHoy.forEach((r) => {
+      // Si estamos editando ese mismo registro, no lo excluimos
+      if (editId && r.id === editId) return;
+      if (r.vueloItinerario?.id) ids.add(Number(r.vueloItinerario.id));
+    });
+    return ids;
+  }, [registrosHoy, editId]);
+
+  // Lista filtrada de vuelos disponibles para el combobox
+  const vuelosDisponibles = vuelos.filter(
+    (v) => !vuelosYaRegistrados.has(Number(v.id)),
+  );
+
   const showModal = (type, title, message) =>
     setModal({ open: true, type, title, message });
 
@@ -961,7 +977,7 @@ export default function LiderVueloPage() {
         </p>
 
         <VueloCombobox
-          vuelos={vuelos}
+          vuelos={vuelosDisponibles}
           value={vueloSelId}
           onChange={setVueloSelId}
           error={errors.vuelo}
