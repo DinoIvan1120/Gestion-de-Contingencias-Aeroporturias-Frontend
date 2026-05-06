@@ -71,7 +71,7 @@ export default function AuditoriaPage() {
   const [filtros, setFiltros] = useState(EMPTY);
   const [activos, setActivos] = useState(EMPTY);
   const [page, setPage] = useState(0);
-  const [panelOpen, setPanelOpen] = useState(true);
+  const [panelOpen, setPanelOpen] = useState(false);
 
   /* Construir params para la query */
   const params = {
@@ -135,109 +135,113 @@ export default function AuditoriaPage() {
       </div>
 
       {/* ── Panel de filtros (estilo AdminUsuarios) ── */}
-      {panelOpen && (
-        <div className={styles.filtrosCard}>
-          <div className={styles.filtrosGrid}>
-            {/* Buscar libre */}
-            <div className={styles.filtroField}>
-              <label className={styles.filtroLabel}>Buscar</label>
-              <div className={styles.filtroInputWrap}>
-                <Search size={14} className={styles.filtroIcon} />
-                <input
-                  className={styles.filtroInput}
-                  placeholder="Correlativo, PNR, nombre..."
-                  value={filtros.buscar}
-                  onChange={(e) => setF("buscar", e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleBuscar()}
-                />
-              </div>
-            </div>
 
-            {/* Usuario */}
-            <div className={styles.filtroField}>
-              <label className={styles.filtroLabel}>Usuario</label>
-              <select
-                className={styles.filtroSelect}
-                value={filtros.usuarioId}
-                onChange={(e) => setF("usuarioId", e.target.value)}
-              >
-                <option value="">Todos los usuarios</option>
-                <option value="0">Sistema</option>
-                {usuarios.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.apellido}, {u.nombre}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Módulo */}
-            <div className={styles.filtroField}>
-              <label className={styles.filtroLabel}>Módulo</label>
-              <select
-                className={styles.filtroSelect}
-                value={filtros.modulo}
-                onChange={(e) => setF("modulo", e.target.value)}
-              >
-                <option value="">Todos los módulos</option>
-                {MODULOS.map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Acción */}
-            <div className={styles.filtroField}>
-              <label className={styles.filtroLabel}>Acción</label>
-              <select
-                className={styles.filtroSelect}
-                value={filtros.accion}
-                onChange={(e) => setF("accion", e.target.value)}
-              >
-                <option value="">Todas las acciones</option>
-                {ACCIONES.map((a) => (
-                  <option key={a} value={a}>
-                    {a}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Fecha desde */}
-            <div className={styles.filtroField}>
-              <label className={styles.filtroLabel}>Fecha desde</label>
+      <div
+        className={[
+          styles.filtrosCard,
+          panelOpen ? styles.filtrosCardOpen : "",
+        ].join(" ")}
+      >
+        <div className={styles.filtrosGrid}>
+          {/* Buscar libre */}
+          <div className={styles.filtroField}>
+            <label className={styles.filtroLabel}>Buscar</label>
+            <div className={styles.filtroInputWrap}>
+              <Search size={14} className={styles.filtroIcon} />
               <input
-                type="date"
                 className={styles.filtroInput}
-                value={filtros.fechaDesde}
-                onChange={(e) => setF("fechaDesde", e.target.value)}
-              />
-            </div>
-
-            {/* Fecha hasta */}
-            <div className={styles.filtroField}>
-              <label className={styles.filtroLabel}>Fecha hasta</label>
-              <input
-                type="date"
-                className={styles.filtroInput}
-                value={filtros.fechaHasta}
-                onChange={(e) => setF("fechaHasta", e.target.value)}
+                placeholder="Correlativo, PNR, nombre..."
+                value={filtros.buscar}
+                onChange={(e) => setF("buscar", e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleBuscar()}
               />
             </div>
           </div>
 
-          <div className={styles.filtrosActions}>
-            <button className={styles.btnLimpiar} onClick={handleLimpiar}>
-              <X size={14} /> Limpiar
-            </button>
-            <button className={styles.btnBuscar} onClick={handleBuscar}>
-              <Search size={14} /> Buscar
-            </button>
+          {/* Usuario */}
+          <div className={styles.filtroField}>
+            <label className={styles.filtroLabel}>Usuario</label>
+            <select
+              className={styles.filtroSelect}
+              value={filtros.usuarioId}
+              onChange={(e) => setF("usuarioId", e.target.value)}
+            >
+              <option value="">Todos los usuarios</option>
+              <option value="0">Sistema</option>
+              {usuarios.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.apellido}, {u.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Módulo */}
+          <div className={styles.filtroField}>
+            <label className={styles.filtroLabel}>Módulo</label>
+            <select
+              className={styles.filtroSelect}
+              value={filtros.modulo}
+              onChange={(e) => setF("modulo", e.target.value)}
+            >
+              <option value="">Todos los módulos</option>
+              {MODULOS.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Acción */}
+          <div className={styles.filtroField}>
+            <label className={styles.filtroLabel}>Acción</label>
+            <select
+              className={styles.filtroSelect}
+              value={filtros.accion}
+              onChange={(e) => setF("accion", e.target.value)}
+            >
+              <option value="">Todas las acciones</option>
+              {ACCIONES.map((a) => (
+                <option key={a} value={a}>
+                  {a}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Fecha desde */}
+          <div className={styles.filtroField}>
+            <label className={styles.filtroLabel}>Fecha desde</label>
+            <input
+              type="date"
+              className={styles.filtroInput}
+              value={filtros.fechaDesde}
+              onChange={(e) => setF("fechaDesde", e.target.value)}
+            />
+          </div>
+
+          {/* Fecha hasta */}
+          <div className={styles.filtroField}>
+            <label className={styles.filtroLabel}>Fecha hasta</label>
+            <input
+              type="date"
+              className={styles.filtroInput}
+              value={filtros.fechaHasta}
+              onChange={(e) => setF("fechaHasta", e.target.value)}
+            />
           </div>
         </div>
-      )}
+
+        <div className={styles.filtrosActions}>
+          <button className={styles.btnLimpiar} onClick={handleLimpiar}>
+            <X size={14} /> Limpiar
+          </button>
+          <button className={styles.btnBuscar} onClick={handleBuscar}>
+            <Search size={14} /> Buscar
+          </button>
+        </div>
+      </div>
 
       {/* ── Tabla ── */}
       <div className={styles.tableWrap}>

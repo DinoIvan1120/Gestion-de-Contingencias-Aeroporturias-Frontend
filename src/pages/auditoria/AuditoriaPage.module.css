@@ -75,12 +75,32 @@
   background: var(--bg-card);
   border: 1.5px solid var(--border);
   border-radius: var(--r-lg);
-  padding: 1.5rem;
   box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition:
+    max-height 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.25s ease,
+    padding 0.28s ease;
+  padding: 0 1.5rem;
+  /* quitar el display: flex y gap del estado base */
+}
+
+/* Estado abierto */
+.filtrosCardOpen {
+  max-height: 900px;
+  opacity: 1;
+  padding: 1.5rem;
+}
+
+/* El flex/gap se mueve aquí para que solo aplique cuando está abierto */
+.filtrosCardOpen {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
 }
+
 .filtrosGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -355,5 +375,9 @@
 @media (max-width: 640px) {
   .filtrosGrid {
     grid-template-columns: 1fr;
+  }
+
+  .filtrosCardOpen {
+    max-height: 1200px;
   }
 }
