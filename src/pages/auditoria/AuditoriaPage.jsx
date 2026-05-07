@@ -6,8 +6,12 @@ import {
   Search,
   X,
   Filter,
+  Download,
 } from "lucide-react";
-import { useAuditoria } from "../../hooks/useAuditoria";
+import {
+  useAuditoria,
+  useExportarExcelAuditoria,
+} from "../../hooks/useAuditoria";
 import { useUsuarios } from "../../hooks/useUsuarios";
 import { formatearFecha } from "../../utils/formatters";
 import styles from "./AuditoriaPage.module.css";
@@ -72,6 +76,7 @@ export default function AuditoriaPage() {
   const [activos, setActivos] = useState(EMPTY);
   const [page, setPage] = useState(0);
   const [panelOpen, setPanelOpen] = useState(false);
+  const [errorModal, setErrorModal] = useState(null);
 
   /* Construir params para la query */
   const params = {
@@ -93,6 +98,8 @@ export default function AuditoriaPage() {
   const { data: usersPage } = useUsuarios({ page: 0, size: 200 });
   const usuarios = usersPage?.content ?? [];
 
+  const exportar = useExportarExcelAuditoria();
+
   const setF = (k, v) => setFiltros((f) => ({ ...f, [k]: v }));
 
   const handleBuscar = () => {
@@ -105,7 +112,25 @@ export default function AuditoriaPage() {
     setPage(0);
   };
 
-  const filtrosActivos = Object.values(activos).filter(Boolean).length;
+  const handleExportar = async () => {
+    try {
+      // Exporta con los filtros actualmente aplicados (activos)
+      const filtrosExcel = {
+        ...(activos.buscar && { buscar: activos.buscar }),
+        ...(activos.usuarioId && { usuarioId: Number(activos.usuarioId) }),
+        ...(activos.modulo && { modulo: activos.modulo }),
+        ...(activos.accion && { accion: activos.accion }),
+        ...(activos.fechaDesde && { fechaDesde: activos.fechaDesde }),
+        ...(activos.fechaHasta && { fechaHasta: activos.fechaHasta }),
+      };
+      await exportar.mutateAsync(filtrosExcel);
+    } catch {
+      setErrorModal("No se pudo generar el archivo Excel de auditoría.");
+    }
+  };
+
+  const filtrosActivosCount = Object.values(activos).filter(Boolean).length;
+  //const filtrosActivos = Object.values(activos).filter(Boolean).length;
 
   return (
     <div className={styles.page}>
@@ -119,19 +144,35 @@ export default function AuditoriaPage() {
             {totalElem !== 1 ? "s" : ""}
           </p>
         </div>
-        <button
-          className={[
-            styles.filtroToggle,
-            panelOpen ? styles.filtroToggleActive : "",
-          ].join(" ")}
-          onClick={() => setPanelOpen((o) => !o)}
-        >
-          <Filter size={16} />
-          Filtros
-          {filtrosActivos > 0 && (
-            <span className={styles.filtroCount}>{filtrosActivos}</span>
-          )}
-        </button>
+
+        <div className={styles.headerActions}>
+          {/* Botón Filtros */}
+          <button
+            className={[
+              styles.filtroToggle,
+              panelOpen ? styles.filtroToggleActive : "",
+            ].join(" ")}
+            onClick={() => setPanelOpen((o) => !o)}
+            aria-label="Mostrar filtros"
+          >
+            <Filter size={16} />
+            Filtros
+            {filtrosActivosCount > 0 && (
+              <span className={styles.filtroCount}>{filtrosActivosCount}</span>
+            )}
+          </button>
+
+          {/* Botón Exportar Excel */}
+          <button
+            className={styles.exportBtn}
+            onClick={handleExportar}
+            disabled={exportar.isPending}
+            aria-label="Exportar Excel"
+          >
+            <Download size={16} />
+            {exportar.isPending ? "Generando…" : "Exportar Excel"}
+          </button>
+        </div>
       </div>
 
       {/* ── Panel de filtros (estilo AdminUsuarios) ── */}
@@ -357,6 +398,18 @@ export default function AuditoriaPage() {
           >
             <ChevronRight size={18} />
           </button>
+        </div>
+      )}
+      {/* ── Error modal simple ── */}
+      {errorModal && (
+        <div
+          className={styles.errorOverlay}
+          onClick={() => setErrorModal(null)}
+        >
+          <div className={styles.errorBox} onClick={(e) => e.stopPropagation()}>
+            <p>{errorModal}</p>
+            <button onClick={() => setErrorModal(null)}>Cerrar</button>
+          </div>
         </div>
       )}
     </div>
