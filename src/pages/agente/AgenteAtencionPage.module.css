@@ -1404,3 +1404,146 @@
     text-align: right;
   }
 }
+
+/* ══════════════════════════════════════════
+   COMBOBOX de recursos (Hotel/Trans/Rest)
+   ══════════════════════════════════════════ */
+.combobox {
+  position: relative;
+  width: 100%;
+}
+
+.comboboxTrigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg);
+  font-size: 0.875rem;
+  color: var(--text-700);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    box-shadow 0.15s;
+  font-family: var(--font-body);
+}
+
+.comboboxTrigger:hover {
+  border-color: #9ca3af;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+}
+
+.comboboxTriggerActive {
+  font-weight: 600;
+}
+
+.comboboxTriggerText {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.comboboxPlaceholder {
+  color: var(--text-400);
+  font-weight: 400;
+}
+
+.comboboxChevron {
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+
+.comboboxChevronOpen {
+  transform: rotate(180deg);
+}
+
+/* Dropdown */
+.comboboxDropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 200;
+  background: var(--bg-card, #fff);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  animation: comboboxIn 0.15s ease;
+}
+
+@keyframes comboboxIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.comboboxOption {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.7rem 1rem;
+  border: none;
+  background: transparent;
+  font-size: 0.875rem;
+  color: var(--text-700);
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-body);
+  transition: background 0.12s;
+  border-bottom: 1px solid var(--border);
+}
+
+.comboboxOption:last-child {
+  border-bottom: none;
+}
+
+.comboboxOption:hover:not(:disabled) {
+  background: var(--bg, #f9fafb);
+}
+
+.comboboxOptionActive {
+  background: #f0fdf4 !important;
+  font-weight: 600;
+  color: #15803d;
+}
+
+.comboboxOptionDisabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.comboboxOptionDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.comboboxOptionLabel {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.comboboxCheck {
+  font-size: 0.8rem;
+  color: #16a34a;
+  font-weight: 700;
+  flex-shrink: 0;
+}

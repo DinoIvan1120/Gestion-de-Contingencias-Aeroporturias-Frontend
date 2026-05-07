@@ -19,6 +19,7 @@ import {
   ChevronLeft,
   RefreshCw,
   AlertCircle,
+  ChevronDown,
 } from "lucide-react";
 import { useRegistrosHoy } from "../../hooks/useRegistrosDiarios";
 import { useWebSocket } from "../../context/WebSocketContext"; // FIX #2
@@ -139,6 +140,122 @@ function Stepper({ label, disponibles = 0, value, onChange }) {
           <Plus size={13} />
         </button>
       </div>
+    </div>
+  );
+}
+
+function ResourceCombobox({
+  recursos,
+  selected,
+  onSelect,
+  getDisp,
+  Icon,
+  buildLabel,
+  colorActive = "#16a34a",
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  // Cierra al hacer clic fuera
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const selectedLabel = selected ? buildLabel(selected) : null;
+
+  return (
+    <div className={styles.combobox} ref={ref}>
+      <button
+        className={[
+          styles.comboboxTrigger,
+          selected ? styles.comboboxTriggerActive : "",
+        ].join(" ")}
+        style={
+          selected
+            ? { borderColor: colorActive, background: `${colorActive}10` }
+            : {}
+        }
+        onClick={() => setOpen((o) => !o)}
+        type="button"
+      >
+        <Icon size={15} color={selected ? colorActive : "var(--text-400)"} />
+        <span className={styles.comboboxTriggerText}>
+          {selectedLabel ?? (
+            <span className={styles.comboboxPlaceholder}>
+              Seleccionar proveedor…
+            </span>
+          )}
+        </span>
+        <ChevronDown
+          size={14}
+          className={[
+            styles.comboboxChevron,
+            open ? styles.comboboxChevronOpen : "",
+          ].join(" ")}
+          color="var(--text-400)"
+        />
+      </button>
+
+      {open && (
+        <div className={styles.comboboxDropdown}>
+          {/* Opción "ninguno" */}
+          <button
+            className={[
+              styles.comboboxOption,
+              !selected ? styles.comboboxOptionActive : "",
+            ].join(" ")}
+            onClick={() => {
+              onSelect(null);
+              setOpen(false);
+            }}
+            type="button"
+          >
+            <span className={styles.comboboxOptionDot} />
+            <span>Sin asignar</span>
+          </button>
+
+          {recursos.map((r) => {
+            const rid = r.vueloRecursoId ?? r.id;
+            const d = getDisp(r);
+            const agotado =
+              d?.agotado === true ||
+              (d?.totalDisponibles !== undefined && d.totalDisponibles === 0);
+            const isSel = selected?.vueloRecursoId === rid;
+            const label = buildLabel(r);
+
+            return (
+              <button
+                key={rid}
+                className={[
+                  styles.comboboxOption,
+                  isSel ? styles.comboboxOptionActive : "",
+                  agotado ? styles.comboboxOptionDisabled : "",
+                ].join(" ")}
+                disabled={agotado}
+                onClick={() => {
+                  onSelect(isSel ? null : r);
+                  setOpen(false);
+                }}
+                type="button"
+              >
+                <span
+                  className={styles.comboboxOptionDot}
+                  style={isSel ? { background: colorActive } : {}}
+                />
+                <span className={styles.comboboxOptionLabel}>{label}</span>
+                {agotado && (
+                  <span className={styles.agotadoTag}>Sin disponibilidad</span>
+                )}
+                {isSel && <span className={styles.comboboxCheck}>✓</span>}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -1594,63 +1711,47 @@ function FormularioAtencion({ registro, onVolver }) {
                 <Hotel size={14} /> Sin hotel asignado para este vuelo
               </div>
             ) : (
-              recursosHotel.map((h) => {
-                const d = getDispHotel(h);
-                const nombre = h.nombreProveedor ?? h.proveedorNombre;
-                const habDisp = d?.totalDisponibles ?? null;
-                const habTotal =
-                  (h.habitacionesSimples ?? 0) +
-                  (h.habitacionesDobles ?? 0) +
-                  (h.habitacionesMatrimoniales ?? 0);
-                const rid = h.vueloRecursoId ?? h.id;
-                const sel = _hotelRec?.vueloRecursoId === rid;
-                const agotado = habDisp !== null && habDisp === 0;
-                return (
-                  <button
-                    key={rid}
-                    className={[
-                      styles.svSelectBtn,
-                      sel ? styles.svSelectBtnActive : "",
-                    ].join(" ")}
-                    disabled={agotado}
-                    onClick={() => {
-                      _setHotelRec(
-                        sel
-                          ? null
-                          : {
-                              ...h,
-                              vueloRecursoId: rid,
-                              habitacionesSimples_Disponibles:
-                                d?.habitacionesSimples_Disponibles ??
-                                h.habitacionesSimples ??
-                                0,
-                              habitacionesDobles_Disponibles:
-                                d?.habitacionesDobles_Disponibles ??
-                                h.habitacionesDobles ??
-                                0,
-                              habitacionesMatrimoniales_Disponibles:
-                                d?.habitacionesMatrimoniales_Disponibles ??
-                                h.habitacionesMatrimoniales ??
-                                0,
-                            },
-                      );
-                    }}
-                  >
-                    <Hotel size={14} />
-                    <span>
-                      {nombre}
-                      {habDisp != null
-                        ? ` (${habDisp}/${habTotal} habitaciones disponibles)`
-                        : ""}
-                    </span>
-                    {agotado && (
-                      <span className={styles.agotadoTag}>
-                        Sin disponibilidad
-                      </span>
-                    )}
-                  </button>
-                );
-              })
+              <ResourceCombobox
+                recursos={recursosHotel}
+                selected={_hotelRec}
+                getDisp={getDispHotel}
+                Icon={Hotel}
+                colorActive="#22c55e"
+                buildLabel={(h) => {
+                  const d = getDispHotel(h);
+                  const nombre = h.nombreProveedor ?? h.proveedorNombre;
+                  const habTotal =
+                    (h.habitacionesSimples ?? 0) +
+                    (h.habitacionesDobles ?? 0) +
+                    (h.habitacionesMatrimoniales ?? 0);
+                  const habDisp = d?.totalDisponibles ?? habTotal;
+                  return `${nombre} (${habDisp}/${habTotal} habitaciones disponibles)`;
+                }}
+                onSelect={(h) => {
+                  if (!h) {
+                    _setHotelRec(null);
+                    return;
+                  }
+                  const rid = h.vueloRecursoId ?? h.id;
+                  const d = getDispHotel(h);
+                  _setHotelRec({
+                    ...h,
+                    vueloRecursoId: rid,
+                    habitacionesSimples_Disponibles:
+                      d?.habitacionesSimples_Disponibles ??
+                      h.habitacionesSimples ??
+                      0,
+                    habitacionesDobles_Disponibles:
+                      d?.habitacionesDobles_Disponibles ??
+                      h.habitacionesDobles ??
+                      0,
+                    habitacionesMatrimoniales_Disponibles:
+                      d?.habitacionesMatrimoniales_Disponibles ??
+                      h.habitacionesMatrimoniales ??
+                      0,
+                  });
+                }}
+              />
             )}
 
             {_hotelRec && (
@@ -1725,42 +1826,28 @@ function FormularioAtencion({ registro, onVolver }) {
                 <Bus size={14} /> Sin transporte asignado para este vuelo
               </div>
             ) : (
-              recursosTransporte.map((t) => {
-                const d = getDispTrans(t);
-                const nombre = t.nombreProveedor ?? t.proveedorNombre;
-                const rid = t.vueloRecursoId ?? t.id;
-                const sel = _transRec?.vueloRecursoId === rid;
-                const agotado = d?.agotado === true;
-                return (
-                  <button
-                    key={rid}
-                    className={[
-                      styles.svSelectBtn,
-                      sel ? styles.svSelectBtnActive : "",
-                    ].join(" ")}
-                    disabled={agotado}
-                    onClick={() =>
-                      _setTransRec(sel ? null : { ...t, vueloRecursoId: rid })
-                    }
-                  >
-                    <Bus size={14} />
-                    <span>
-                      {nombre}
-                      {d?.capacidadDisponible != null
-                        ? ` (${d.capacidadDisponible}/${d.capacidadTotal ?? t.capacidadTotal ?? "?"} pax disponibles)`
-                        : t.capacidadTotal != null
-                          ? ` (${t.capacidadTotal}/${t.capacidadTotal} pax disponibles)`
-                          : ""}
-                    </span>
-                    {/* <span>{nombre}</span> */}
-                    {agotado && (
-                      <span className={styles.agotadoTag}>
-                        Sin disponibilidad
-                      </span>
-                    )}
-                  </button>
-                );
-              })
+              <ResourceCombobox
+                recursos={recursosTransporte}
+                selected={_transRec}
+                getDisp={getDispTrans}
+                Icon={Bus}
+                colorActive="#3b82f6"
+                buildLabel={(t) => {
+                  const d = getDispTrans(t);
+                  const nombre = t.nombreProveedor ?? t.proveedorNombre;
+                  const disp =
+                    d?.capacidadDisponible ?? t.capacidadTotal ?? "—";
+                  const total = d?.capacidadTotal ?? t.capacidadTotal ?? "—";
+                  return `${nombre} (${disp}/${total} pax disponibles)`;
+                }}
+                onSelect={(t) =>
+                  _setTransRec(
+                    t
+                      ? { ...t, vueloRecursoId: t.vueloRecursoId ?? t.id }
+                      : null,
+                  )
+                }
+              />
             )}
 
             {_transRec && (
@@ -1827,42 +1914,28 @@ function FormularioAtencion({ registro, onVolver }) {
                 vuelo
               </div>
             ) : (
-              recursosRest.map((r) => {
-                const d = getDispRest(r);
-                const nombre = r.nombreProveedor ?? r.proveedorNombre;
-                const rid = r.vueloRecursoId ?? r.id;
-                const sel = _restRec?.vueloRecursoId === rid;
-                const agotado = d?.agotado === true;
-                return (
-                  <button
-                    key={rid}
-                    className={[
-                      styles.svSelectBtn,
-                      sel ? styles.svSelectBtnActive : "",
-                    ].join(" ")}
-                    disabled={agotado}
-                    onClick={() =>
-                      _setRestRec(sel ? null : { ...r, vueloRecursoId: rid })
-                    }
-                  >
-                    <UtensilsCrossed size={14} />
-                    <span>
-                      {nombre}
-                      {d?.capacidadDisponible != null
-                        ? ` (${d.capacidadDisponible}/${d.capacidadTotal ?? r.capacidadTotal ?? "?"} cubiertos disponibles)`
-                        : r.capacidadTotal != null
-                          ? ` (${r.capacidadTotal}/${r.capacidadTotal} cubiertos disponibles)`
-                          : ""}
-                    </span>
-                    {/* <span>{nombre}</span> */}
-                    {agotado && (
-                      <span className={styles.agotadoTag}>
-                        Sin disponibilidad
-                      </span>
-                    )}
-                  </button>
-                );
-              })
+              <ResourceCombobox
+                recursos={recursosRest}
+                selected={_restRec}
+                getDisp={getDispRest}
+                Icon={UtensilsCrossed}
+                colorActive="#f97316"
+                buildLabel={(r) => {
+                  const d = getDispRest(r);
+                  const nombre = r.nombreProveedor ?? r.proveedorNombre;
+                  const disp =
+                    d?.capacidadDisponible ?? r.capacidadTotal ?? "—";
+                  const total = d?.capacidadTotal ?? r.capacidadTotal ?? "—";
+                  return `${nombre} (${disp}/${total} cubiertos disponibles)`;
+                }}
+                onSelect={(r) =>
+                  _setRestRec(
+                    r
+                      ? { ...r, vueloRecursoId: r.vueloRecursoId ?? r.id }
+                      : null,
+                  )
+                }
+              />
             )}
 
             {_restRec && (
