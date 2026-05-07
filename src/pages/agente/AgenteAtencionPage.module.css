@@ -1547,3 +1547,27 @@
   font-weight: 700;
   flex-shrink: 0;
 }
+
+.comboboxTriggerEmpty {
+  background: var(--bg, #f9fafb);
+  border-style: dashed;
+  color: var(--text-400);
+}
+
+.comboboxTriggerEmpty:hover {
+  border-style: solid;
+  border-color: #9ca3af;
+}
+
+.comboboxIconBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: 1.5px solid #d1d5db; /* ← color explícito */
+  background: #f1f5f9; /* ← fondo gris claro visible */
+  flex-shrink: 0;
+  transition: all 0.15s;
+}

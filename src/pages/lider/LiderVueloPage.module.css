@@ -717,7 +717,7 @@
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.12),
     0 2px 8px rgba(0, 0, 0, 0.06);
-  z-index: 200;
+  z-index: 201;
   overflow: hidden;
   animation: dropdownIn 0.15s ease;
 }
@@ -1114,5 +1114,25 @@
   .addResourceBtn {
     width: 100%;
     justify-content: center;
+  }
+}
+
+/* ── Backdrop semitransparente al abrir cualquier combobox ── */
+.comboboxBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(1.5px);
+  -webkit-backdrop-filter: blur(1.5px);
+  z-index: 199;
+  animation: backdropIn 0.18s ease;
+}
+
+@keyframes backdropIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }

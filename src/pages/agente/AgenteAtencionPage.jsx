@@ -152,6 +152,7 @@ function ResourceCombobox({
   Icon,
   buildLabel,
   colorActive = "#16a34a",
+  placeholder = "Seleccionar proveedor…", // ← AGREGAR
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -172,7 +173,7 @@ function ResourceCombobox({
       <button
         className={[
           styles.comboboxTrigger,
-          selected ? styles.comboboxTriggerActive : "",
+          selected ? styles.comboboxTriggerActive : styles.comboboxTriggerEmpty,
         ].join(" ")}
         style={
           selected
@@ -182,12 +183,20 @@ function ResourceCombobox({
         onClick={() => setOpen((o) => !o)}
         type="button"
       >
-        <Icon size={15} color={selected ? colorActive : "var(--text-400)"} />
+        {/* Ícono con badge de color */}
+        <span
+          className={styles.comboboxIconBadge}
+          style={{
+            background: selected ? `${colorActive}20` : "#f1f5f9",
+            borderColor: selected ? `${colorActive}50` : "#d1d5db",
+          }}
+        >
+          <Icon size={16} color={selected ? colorActive : "#9ca3af"} />
+        </span>
+
         <span className={styles.comboboxTriggerText}>
           {selectedLabel ?? (
-            <span className={styles.comboboxPlaceholder}>
-              Seleccionar proveedor…
-            </span>
+            <span className={styles.comboboxPlaceholder}>{placeholder}</span>
           )}
         </span>
         <ChevronDown
@@ -1717,6 +1726,7 @@ function FormularioAtencion({ registro, onVolver }) {
                 getDisp={getDispHotel}
                 Icon={Hotel}
                 colorActive="#22c55e"
+                placeholder="Seleccione hotel..."
                 buildLabel={(h) => {
                   const d = getDispHotel(h);
                   const nombre = h.nombreProveedor ?? h.proveedorNombre;
@@ -1832,6 +1842,7 @@ function FormularioAtencion({ registro, onVolver }) {
                 getDisp={getDispTrans}
                 Icon={Bus}
                 colorActive="#3b82f6"
+                placeholder="Seleccione transporte..."
                 buildLabel={(t) => {
                   const d = getDispTrans(t);
                   const nombre = t.nombreProveedor ?? t.proveedorNombre;
@@ -1920,6 +1931,7 @@ function FormularioAtencion({ registro, onVolver }) {
                 getDisp={getDispRest}
                 Icon={UtensilsCrossed}
                 colorActive="#f97316"
+                placeholder="Seleccione restaurante"
                 buildLabel={(r) => {
                   const d = getDispRest(r);
                   const nombre = r.nombreProveedor ?? r.proveedorNombre;

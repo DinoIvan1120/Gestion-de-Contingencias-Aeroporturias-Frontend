@@ -116,6 +116,17 @@ function VueloCombobox({ vuelos, value, onChange, error }) {
 
   return (
     <div className={styles.comboboxWrap} ref={ref}>
+      {/* Backdrop semitransparente */}
+      {open && (
+        <div
+          className={styles.comboboxBackdrop}
+          onClick={() => {
+            setOpen(false);
+            setQuery("");
+          }}
+          aria-hidden="true"
+        />
+      )}
       {/* Trigger */}
       <button
         type="button"
@@ -322,6 +333,17 @@ function ProveedorCombobox({
 
   return (
     <div className={styles.comboboxWrap} ref={ref}>
+      {/* Backdrop semitransparente */}
+      {open && (
+        <div
+          className={styles.comboboxBackdrop}
+          onClick={() => {
+            setOpen(false);
+            setQuery("");
+          }}
+          aria-hidden="true"
+        />
+      )}
       <button
         type="button"
         className={[
