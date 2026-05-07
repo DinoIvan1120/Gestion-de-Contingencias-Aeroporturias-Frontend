@@ -1118,12 +1118,11 @@
 }
 
 /* ── Backdrop semitransparente al abrir cualquier combobox ── */
+/* AHORA — semitransparente, igual que Gestión de Proveedores */
 .comboboxBackdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(1.5px);
-  -webkit-backdrop-filter: blur(1.5px);
+  background: rgba(0, 0, 0, 0.28);
   z-index: 199;
   animation: backdropIn 0.18s ease;
 }
