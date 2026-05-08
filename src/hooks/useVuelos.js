@@ -1,4 +1,9 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  keepPreviousData,
+} from "@tanstack/react-query";
 import vuelosApi from "../api/vuelosApi";
 import recursosApi from "../api/recursosApi";
 
@@ -24,6 +29,27 @@ export function useVuelo(id) {
       return data.data;
     },
     enabled: !!id,
+  });
+}
+
+/**
+ * Búsqueda dinámica de vuelos con filtros opcionales.
+ * Mantiene datos anteriores mientras carga (sin parpadeo).
+ * Igual al patrón de useBuscarUsuarios.
+ */
+export function useBuscarVuelos(filtros, pageable = { page: 0, size: 50 }) {
+  return useQuery({
+    queryKey: [...VUELOS_KEY, "buscar", filtros, pageable],
+    queryFn: async () => {
+      const params = {};
+      Object.entries({ ...filtros, ...pageable }).forEach(([k, v]) => {
+        if (v !== "" && v !== null && v !== undefined) params[k] = v;
+      });
+      const { data } = await vuelosApi.buscar(params);
+      return data.data;
+    },
+    placeholderData: keepPreviousData,
+    staleTime: Number(import.meta.env.VITE_QUERY_STALE_TIME) || 0,
   });
 }
 
@@ -58,6 +84,15 @@ export function useAnularVuelo() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id) => vuelosApi.anular(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: VUELOS_KEY }),
+  });
+}
+
+/** Reactiva un vuelo ANULADO → ACTIVO */
+export function useHabilitarVuelo() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => vuelosApi.habilitar(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: VUELOS_KEY }),
   });
 }

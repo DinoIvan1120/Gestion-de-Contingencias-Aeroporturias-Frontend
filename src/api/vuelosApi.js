@@ -5,9 +5,13 @@ const BASE = "/api/v1/vuelos";
 const vuelosApi = {
   getAll: (params) => axiosClient.get(BASE, { params }),
   getById: (id) => axiosClient.get(`${BASE}/${id}`),
+  /** GET /vuelos/buscar — búsqueda dinámica con filtros opcionales */
+  buscar: (params) => axiosClient.get(`${BASE}/buscar`, { params }),
   create: (body) => axiosClient.post(BASE, body),
   update: (id, body) => axiosClient.put(`${BASE}/${id}`, body),
   anular: (id) => axiosClient.patch(`${BASE}/${id}/anular`),
+  /** PATCH /vuelos/{id}/habilitar — reactiva un vuelo ANULADO */
+  habilitar: (id) => axiosClient.patch(`${BASE}/${id}/habilitar`),
   cargaMasiva: (formData) =>
     axiosClient.post(`${BASE}/carga-masiva`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
