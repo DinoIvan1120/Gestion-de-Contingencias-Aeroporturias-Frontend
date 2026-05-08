@@ -847,7 +847,7 @@ function EditarVueloModal({ open, vuelo, onClose, onGuardado, onSuccess }) {
             ) : (
               <Save size={15} />
             )}
-            {saving ? "Guardando..." : "Guardar cambios"}
+            {saving ? "Guardando..." : "Guardar"}
           </button>
         </div>
       </div>
