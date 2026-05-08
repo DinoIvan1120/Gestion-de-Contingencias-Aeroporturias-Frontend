@@ -21,6 +21,7 @@ import {
   useActualizarServicios,
   useRegenerarPdf,
 } from "../../hooks/useReportes";
+import { useObtenerUrlDescarga } from "../../hooks/useAtenciones"; // ← AGREGAR
 import { useProveedores } from "../../hooks/useProveedores";
 import { formatearMonto, formatearFecha } from "../../utils/formatters";
 import Badge from "../../components/ui/Badge.jsx";
@@ -89,6 +90,22 @@ function Desglose({ d }) {
               {fmt(d.hotel.subtotal)}
             </span>
           </div>
+
+          {/* ── AGREGAR ESTO — fechas de estadía ── */}
+          {(d.hotel.fechaIngreso || d.hotel.fechaSalida) && (
+            <div className={styles.svDetalle}>
+              <p className={styles.svSubHead}>Fechas de estadía:</p>
+              <div className={styles.svLinea}>
+                <span>📅 Check-in</span>
+                <span>{d.hotel.fechaIngreso ?? "—"}</span>
+              </div>
+              <div className={styles.svLinea}>
+                <span>📅 Check-out</span>
+                <span>{d.hotel.fechaSalida ?? "—"}</span>
+              </div>
+            </div>
+          )}
+          {/* ── FIN ── */}
           {d.hotel.cantidadHabitaciones > 0 && (
             <div className={styles.svDetalle}>
               <p className={styles.svSubHead}>Habitaciones:</p>
@@ -527,6 +544,27 @@ export default function ReporteDetallePage() {
     title: "",
     message: "",
   });
+
+  // Dentro del componente, junto a los otros hooks:
+  const descargar = useObtenerUrlDescarga();
+
+  // Handler de descarga:
+  const handleDescargarPdf = async () => {
+    try {
+      const res = await descargar.mutateAsync(d.atencionId);
+      const url = res.data?.downloadUrl;
+      if (url) window.open(url, "_blank");
+      else
+        showModal("error", "Error", "No se pudo obtener la URL de descarga.");
+    } catch (err) {
+      showModal(
+        "error",
+        "Error",
+        err.response?.data?.message ?? "Error al descargar PDF.",
+      );
+    }
+  };
+
   const showModal = (type, title, msg) =>
     setModal({ open: true, type, title, message: msg });
 
@@ -672,6 +710,23 @@ export default function ReporteDetallePage() {
                   {d.restaurante?.proveedorNombre ?? "—"}
                 </div>
               </div>
+              {/* ── AGREGAR ── */}
+              {d.hotel && (
+                <>
+                  <div className={styles.infoField}>
+                    <label>Check-in</label>
+                    <div className={styles.infoVal}>
+                      {d.hotel.fechaIngreso ?? "—"}
+                    </div>
+                  </div>
+                  <div className={styles.infoField}>
+                    <label>Check-out</label>
+                    <div className={styles.infoVal}>
+                      {d.hotel.fechaSalida ?? "—"}
+                    </div>
+                  </div>
+                </>
+              )}
             </>
           ) : (
             <>
@@ -726,6 +781,19 @@ export default function ReporteDetallePage() {
               onClick={() => setEditMode(true)}
             >
               <Edit2 size={15} /> Editar
+            </button>
+            {/* ── AGREGAR — Descargar PDF ── */}
+            <button
+              className={styles.btnDescargar}
+              onClick={handleDescargarPdf}
+              disabled={descargar.isPending}
+            >
+              {descargar.isPending ? (
+                <Spinner size="sm" />
+              ) : (
+                <Download size={15} />
+              )}
+              {descargar.isPending ? "Descargando..." : "Descargar PDF"}
             </button>
             {/* <button
               className={styles.btnDescargar}

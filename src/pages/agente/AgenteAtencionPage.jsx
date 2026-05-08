@@ -941,6 +941,18 @@ function FormularioAtencion({ registro, onVolver }) {
       return null;
     }
 
+    const pnrsEnForm = validosConIdx.map(({ p }) => p.pnr.toUpperCase());
+    const pnrsUnicos = new Set(pnrsEnForm);
+    if (pnrsUnicos.size !== pnrsEnForm.length) {
+      showModal(
+        "error",
+        "PNR duplicado",
+        "Hay pasajeros con el mismo PNR en el formulario. Cada pasajero debe tener un PNR único.",
+      );
+      return null;
+    }
+    // ── FIN ──
+
     const atencionIds = [];
     for (const { p: px, i } of validosConIdx) {
       const res = await crearAt.mutateAsync({
