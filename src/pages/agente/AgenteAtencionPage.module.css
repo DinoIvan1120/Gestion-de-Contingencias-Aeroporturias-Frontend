@@ -582,6 +582,9 @@
   border: 1px solid #bfdbfe;
   border-radius: var(--r-md);
   padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
 }
 .restDetalle {
   background: #fff7ed;

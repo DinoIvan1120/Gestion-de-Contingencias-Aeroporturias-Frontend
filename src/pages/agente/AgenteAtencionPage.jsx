@@ -60,6 +60,8 @@ const EMPTY_SV = {
   restRec: null,
   cantRest: 1,
   svRest: { desayuno: false, almuerzo: false, cena: false },
+  fechaIngreso: HOY, // ← AGREGAR
+  fechaSalida: "", // ← AGREGAR
 };
 const EMPTY_PX = { nombre: "", apellido: "", pnr: "", correo: "", ...EMPTY_SV };
 
@@ -459,6 +461,8 @@ function FormularioAtencion({ registro, onVolver }) {
     snack: false,
     cena: false,
   });
+  const [fechaIngreso, setFechaIngreso] = useState(HOY);
+  const [fechaSalida, setFechaSalida] = useState("");
 
   const [transRec, setTransRec] = useState(null); // RecursoDisponibleResponse
   const [cantTrans, setCantTrans] = useState(1); // ← AGREGAR ESTA LÍNEA
@@ -502,6 +506,15 @@ function FormularioAtencion({ registro, onVolver }) {
         cena: false,
       })
     : svHotel;
+
+  const _fechaIngreso = isSvInd ? (pxSv.fechaIngreso ?? HOY) : fechaIngreso;
+  const _fechaSalida = isSvInd ? (pxSv.fechaSalida ?? "") : fechaSalida;
+  const _setFechaIngreso = isSvInd
+    ? (v) => setPxSvField("fechaIngreso", v)
+    : setFechaIngreso;
+  const _setFechaSalida = isSvInd
+    ? (v) => setPxSvField("fechaSalida", v)
+    : setFechaSalida;
   const _transRec = isSvInd ? (pxSv.transRec ?? null) : transRec;
   const _cantTrans = isSvInd ? (pxSv.cantTrans ?? 1) : cantTrans;
   const _tipoTrans = isSvInd
@@ -882,6 +895,8 @@ function FormularioAtencion({ registro, onVolver }) {
           cena: svH.cena,
           snack: svH.snack,
           cantidad: sims + dobs + mats || 1,
+          fechaIngreso: _fechaIngreso || null, // ← AGREGAR
+          fechaSalida: _fechaSalida || null, // ← AGREGAR
         });
       }
     }
@@ -977,6 +992,8 @@ function FormularioAtencion({ registro, onVolver }) {
     setRestRec(null);
     setCantRest(1);
     setSvRest({ desayuno: false, almuerzo: false, cena: false });
+    setFechaIngreso(HOY);
+    setFechaSalida("");
   };
 
   /* ── Botón "Generar PDF" — solo genera y sube a S3 ── */
@@ -1760,12 +1777,37 @@ function FormularioAtencion({ registro, onVolver }) {
                       h.habitacionesMatrimoniales ??
                       0,
                   });
+                  _setSimples(1); //Default 1 simple al seleccionar
                 }}
               />
             )}
 
             {_hotelRec && (
               <div className={styles.hotelDetalle}>
+                {/* ── FECHAS CHECK-IN / CHECK-OUT ── */}
+                <p className={styles.hotelDetalleTitulo}>Fechas de estadía:</p>
+                <div className={styles.emisionGrid}>
+                  <div className={styles.pxField}>
+                    <label className={styles.pxLabel}>📅 Check-in *</label>
+                    <input
+                      type="date"
+                      className={styles.pxInput}
+                      value={_fechaIngreso}
+                      min={HOY}
+                      onChange={(e) => _setFechaIngreso(e.target.value)}
+                    />
+                  </div>
+                  <div className={styles.pxField}>
+                    <label className={styles.pxLabel}>📅 Check-out *</label>
+                    <input
+                      type="date"
+                      className={styles.pxInput}
+                      value={_fechaSalida}
+                      min={_fechaIngreso || HOY}
+                      onChange={(e) => _setFechaSalida(e.target.value)}
+                    />
+                  </div>
+                </div>
                 <p className={styles.hotelDetalleTitulo}>
                   Seleccionar Tipo y Cantidad de Habitaciones
                 </p>
