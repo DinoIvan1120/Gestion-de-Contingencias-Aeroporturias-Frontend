@@ -302,45 +302,34 @@ export default function AdminVuelosPage() {
   return (
     <div className={styles.page}>
       <div className={styles.pageHeader}>
-        {/* Fila 1: ícono + título (ocupa todo el ancho) */}
-        <div className={styles.headerTop}>
-          <Plane size={24} color="var(--rol-admin)" />
-          <div>
-            <h1 className={styles.title}>Carga Masiva</h1>
-            <p className={styles.sub}>Importa vuelos en Excel (.xlsx)</p>
-          </div>
+        {/* Ícono + título */}
+        <Plane size={24} color="var(--rol-admin)" />
+        <div>
+          <h1 className={styles.title}>Carga Masiva de vuelos</h1>
+          <p className={styles.sub}>Importa vuelos en Excel (.xlsx)</p>
         </div>
 
-        {/* Filtros — esquina superior derecha */}
-        <button
-          className={[
-            styles.filterToggleBtn,
-            filtrosOpen ? styles.filterToggleActive : "",
-          ].join(" ")}
-          onClick={() => setFiltrosOpen((o) => !o)}
-        >
-          <SlidersHorizontal size={15} />
-          Filtros
-          {numActivos > 0 && (
-            <span className={styles.filterBadge}>{numActivos}</span>
-          )}
-        </button>
-
-        {/* Fila 2: Carga masiva + Agregar vuelo */}
+        {/* Acciones: Filtros + Agregar vuelo — mismo patrón que Reportes */}
         <div className={styles.headerActions}>
           <button
-            className={styles.uploadBtn}
-            onClick={() => setUploadOpen(true)}
+            className={[
+              styles.filterToggleBtn,
+              filtrosOpen ? styles.filterToggleActive : "",
+            ].join(" ")}
+            onClick={() => setFiltrosOpen((o) => !o)}
+            aria-label="Mostrar filtros"
           >
-            <Upload size={15} />
-            Carga masiva
+            <SlidersHorizontal size={16} />
+            <span>Filtros</span>
+            {numActivos > 0 && (
+              <span className={styles.filterBadge}>{numActivos}</span>
+            )}
           </button>
-          <div style={{ flex: 1 }}>
-            <Button onClick={abrirCrear} style={{ width: "100%" }}>
-              <Plus size={15} />
-              Agregar vuelo
-            </Button>
-          </div>
+
+          <Button onClick={abrirCrear}>
+            <Plus size={15} />
+            Agregar vuelo
+          </Button>
         </div>
       </div>
 

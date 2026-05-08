@@ -18,6 +18,7 @@
   display: flex;
   align-items: center;
   gap: 0.875rem;
+  flex-wrap: wrap;
 }
 .title {
   font-family: var(--font-display);
@@ -37,10 +38,9 @@ cambio
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  flex-wrap: wrap;
 }
 
-/* ── Botón toggle de filtro ── */
+/* Botón toggle Filtros — igual altura/padding que Button */
 .filterToggleBtn {
   display: inline-flex;
   align-items: center;
@@ -55,7 +55,9 @@ cambio
   font-family: var(--font-body);
   cursor: pointer;
   transition: all var(--transition-fast);
-  position: relative;
+  height: 38px; /* ← misma altura que Button */
+  box-sizing: border-box;
+  white-space: nowrap;
 }
 .filterToggleBtn:hover {
   border-color: var(--primary);
@@ -68,7 +70,6 @@ cambio
   background: var(--primary-light);
 }
 
-/* Badge con número de filtros activos */
 .filterBadge {
   display: inline-flex;
   align-items: center;
@@ -505,36 +506,12 @@ cambio
   min-width: 0; /* evita overflow del texto */
 }
 
-/* ── Móvil puro: < 520px ── */
-@media (max-width: 519px) {
-  .pageHeader {
-    position: relative;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-  .headerTop {
-    flex: 1 1 100%;
-    min-width: 0;
-  }
-  .filterToggleBtn {
-    position: absolute;
-    top: 0;
-    right: 0;
-    font-size: 0.8rem;
-    padding: 0.45rem 0.75rem;
-    white-space: nowrap;
-  }
+/* Responsive */
+@media (max-width: 600px) {
   .headerActions {
-    flex: 1 1 100%;
+    width: 100%;
     margin-left: 0;
-    gap: 0.5rem;
-  }
-  .uploadBtn {
-    flex: 1;
-    justify-content: center;
-    font-size: 0.85rem;
-    padding: 0.5rem 0.5rem;
+    justify-content: flex-end;
   }
   .filterGrid {
     grid-template-columns: 1fr;
@@ -544,44 +521,5 @@ cambio
   }
   .formGrid {
     grid-template-columns: 1fr;
-  }
-  .title {
-    font-size: 1.2rem;
-  }
-  .sub {
-    font-size: 0.8rem;
-  }
-}
-
-/* ── 520px en adelante: UNA sola fila horizontal ── */
-@media (min-width: 520px) {
-  .pageHeader {
-    display: flex;
-    flex-wrap: nowrap;
-    align-items: center;
-    gap: 0.625rem;
-  }
-  .headerTop {
-    flex: 1 1 auto;
-    min-width: 0;
-  }
-  .filterToggleBtn {
-    position: static !important;
-    flex-shrink: 0;
-    white-space: nowrap;
-    font-size: 0.82rem;
-    padding: 0.45rem 0.7rem;
-  }
-  .headerActions {
-    flex-shrink: 0;
-    flex-wrap: nowrap;
-    margin-left: 0;
-    gap: 0.5rem;
-  }
-  .uploadBtn {
-    flex: none;
-    white-space: nowrap;
-    font-size: 0.82rem;
-    padding: 0.45rem 0.7rem;
   }
 }
