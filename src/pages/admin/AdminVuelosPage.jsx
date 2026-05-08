@@ -306,7 +306,7 @@ export default function AdminVuelosPage() {
         <div className={styles.headerTop}>
           <Plane size={24} color="var(--rol-admin)" />
           <div>
-            <h1 className={styles.title}>Carga Masiva de Vuelos</h1>
+            <h1 className={styles.title}>Carga Masiva</h1>
             <p className={styles.sub}>Importa vuelos en Excel (.xlsx)</p>
           </div>
         </div>
