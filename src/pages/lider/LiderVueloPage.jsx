@@ -18,7 +18,7 @@ import {
   Search,
   Check,
 } from "lucide-react";
-import { useVuelos } from "../../hooks/useVuelos";
+import { useVuelos, useActualizarVuelo } from "../../hooks/useVuelos";
 import { useProveedores } from "../../hooks/useProveedores";
 import {
   useRegistrosHoy,
@@ -589,6 +589,272 @@ function recFromRegistro(r) {
 //   };
 // }
 
+const CONTINGENCIA_OPTIONS = [
+  { value: "PROGRAMADO", color: "#2563eb", label: "Programado" },
+  { value: "CANCELACION", color: "#dc2626", label: "Cancelación" },
+  { value: "DEMORA", color: "#d97706", label: "Demora" },
+  { value: "REPROGRAMADO", color: "#7c3aed", label: "Reprogramado" },
+];
+
+function ContingenciaSelect({ value, onChange }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  const selected = CONTINGENCIA_OPTIONS.find((o) => o.value === value);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div className={styles.comboboxWrap} ref={ref}>
+      {open && (
+        <div
+          className={styles.comboboxBackdrop}
+          onClick={() => setOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+      <button
+        type="button"
+        className={[
+          styles.proveedorTrigger,
+          open ? styles.comboboxOpen : "",
+        ].join(" ")}
+        style={selected ? { borderColor: selected.color + "50" } : {}}
+        onClick={() => setOpen((o) => !o)}
+      >
+        {selected ? (
+          <div className={styles.proveedorSelected}>
+            <span
+              style={{
+                display: "inline-block",
+                width: 10,
+                height: 10,
+                borderRadius: "50%",
+                background: selected.color,
+                flexShrink: 0,
+              }}
+            />
+            <span
+              style={{
+                fontSize: "0.9rem",
+                fontWeight: 600,
+                color: selected.color,
+              }}
+            >
+              {selected.label}
+            </span>
+          </div>
+        ) : (
+          <span className={styles.comboboxPlaceholder}>Selecciona estado</span>
+        )}
+        <ChevronDown
+          size={14}
+          className={[
+            styles.comboboxChevron,
+            open ? styles.comboboxChevronUp : "",
+          ].join(" ")}
+        />
+      </button>
+
+      {open && (
+        <div className={styles.comboboxDropdown}>
+          <div className={styles.comboboxList}>
+            {CONTINGENCIA_OPTIONS.map((op) => {
+              const isSel = op.value === value;
+              return (
+                <button
+                  key={op.value}
+                  type="button"
+                  className={[
+                    styles.proveedorOption,
+                    isSel ? styles.comboboxOptionSel : "",
+                  ].join(" ")}
+                  style={isSel ? { borderLeft: `3px solid ${op.color}` } : {}}
+                  onClick={() => {
+                    onChange(op.value);
+                    setOpen(false);
+                  }}
+                >
+                  <span
+                    style={{
+                      display: "inline-block",
+                      width: 10,
+                      height: 10,
+                      borderRadius: "50%",
+                      background: op.color,
+                      flexShrink: 0,
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontSize: "0.875rem",
+                      fontWeight: isSel ? 700 : 500,
+                      color: op.color,
+                      flex: 1,
+                    }}
+                  >
+                    {op.label}
+                  </span>
+                  {isSel && (
+                    <Check
+                      size={14}
+                      style={{ color: op.color, flexShrink: 0 }}
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Sub-componente: Modal de edición rápida del vuelo del itinerario ── */
+function EditarVueloModal({ open, vuelo, onClose, onGuardado, onSuccess }) {
+  const actualizarVuelo = useActualizarVuelo();
+  const [form, setForm] = useState({
+    tipoContingencia: vuelo?.tipoContingencia ?? "PROGRAMADO",
+    observaciones: vuelo?.observaciones ?? "",
+  });
+  const [saving, setSaving] = useState(false);
+  const [evError, setEvError] = useState("");
+
+  useEffect(() => {
+    if (open && vuelo) {
+      setForm({
+        tipoContingencia: vuelo.tipoContingencia ?? "PROGRAMADO",
+        observaciones: vuelo.observaciones ?? "",
+      });
+      setEvError("");
+    }
+  }, [open, vuelo]);
+
+  if (!open || !vuelo) return null;
+
+  const handleGuardar = async () => {
+    setSaving(true);
+    setEvError("");
+    try {
+      const payload = {
+        aerolinea: vuelo.aerolinea,
+        codigoVuelo: vuelo.codigoVuelo,
+        origen: vuelo.origen,
+        destino: vuelo.destino,
+        fechaVuelo: vuelo.fechaVuelo?.slice(0, 10),
+        tipoContingencia: form.tipoContingencia,
+        observaciones: form.observaciones || "",
+      };
+      await actualizarVuelo.mutateAsync({ id: vuelo.id, ...payload });
+      onGuardado({ ...vuelo, ...form });
+      onSuccess?.(`Vuelo ${vuelo.codigoVuelo} actualizado correctamente.`);
+      onClose();
+    } catch (err) {
+      setEvError(
+        err.response?.data?.message ?? "Error al actualizar el vuelo.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className={styles.evOverlay} onClick={onClose}>
+      <div className={styles.evModal} onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className={styles.evHeader}>
+          <div className={styles.evHeaderLeft}>
+            <Plane size={16} color="var(--rol-lider)" />
+            <span className={styles.evTitle}>Editar datos del vuelo</span>
+          </div>
+          <button
+            className={styles.evClose}
+            onClick={onClose}
+            aria-label="Cerrar"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Vuelo info readonly */}
+        <div className={styles.evVueloInfo}>
+          <span className={styles.evCodigo}>
+            <Plane size={12} /> {vuelo.codigoVuelo}
+          </span>
+          <span className={styles.evRuta}>
+            {vuelo.origen} → {vuelo.destino}
+          </span>
+          <span className={styles.evAero}>{vuelo.aerolinea}</span>
+        </div>
+
+        {/* Campos editables */}
+        <div className={styles.evBody}>
+          <div className={styles.field}>
+            <label className={styles.fieldLabel}>
+              Estado / Contingencia <span className={styles.req}>*</span>
+            </label>
+            <ContingenciaSelect
+              value={form.tipoContingencia}
+              onChange={(val) =>
+                setForm((f) => ({ ...f, tipoContingencia: val }))
+              }
+            />
+          </div>
+
+          <div className={styles.field}>
+            <label className={styles.fieldLabel}>Observaciones del vuelo</label>
+            <textarea
+              className={styles.textarea}
+              rows={3}
+              placeholder="Ingresa una observación sobre el vuelo..."
+              value={form.observaciones}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, observaciones: e.target.value }))
+              }
+            />
+          </div>
+
+          {evError && (
+            <p className={styles.evErrorMsg}>
+              <AlertCircle size={13} /> {evError}
+            </p>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className={styles.evFooter}>
+          <button
+            className={styles.cancelarBtn}
+            onClick={onClose}
+            disabled={saving}
+          >
+            Cancelar
+          </button>
+          <button
+            className={styles.guardarBtn}
+            onClick={handleGuardar}
+            disabled={saving}
+          >
+            {saving ? (
+              <span className={styles.spinnerInline} />
+            ) : (
+              <Save size={15} />
+            )}
+            {saving ? "Guardando..." : "Guardar cambios"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ── Sub-componente: Card de un registro diario ── */
 function RegistroCard({ r, onEditar, onEliminar }) {
   const v = r.vueloItinerario;
@@ -729,6 +995,9 @@ export default function LiderVueloPage() {
   const [rec, setRec] = useState(EMPTY_REC);
   const [editId, setEditId] = useState(null); // id del
   // registro en edición
+
+  // registro en edición
+  const [editVueloModal, setEditVueloModal] = useState(false); // modal editar vuelo itinerario
 
   // Bandera para indicar que vueloSelId fue cambiado PROGRAMÁTICAMENTE (desde handleEditar)
   // y no por el usuario tocando el combobox → el useEffect NO debe resetear rec/obs/editId
@@ -1043,6 +1312,16 @@ export default function LiderVueloPage() {
                   <span className={styles.vpVal}>{vueloSel.observaciones}</span>
                 </div>
               )}
+            </div>
+            {/* Botón editar vuelo */}
+            <div className={styles.vpEditarWrap}>
+              <button
+                className={styles.vpEditarBtn}
+                onClick={() => setEditVueloModal(true)}
+                title="Editar estado y observación del vuelo"
+              >
+                <Edit2 size={13} /> Editar vuelo
+              </button>
             </div>
           </div>
         )}
@@ -1424,6 +1703,14 @@ export default function LiderVueloPage() {
           )}
         </>
       )}
+
+      <EditarVueloModal
+        open={editVueloModal}
+        vuelo={vueloSel}
+        onClose={() => setEditVueloModal(false)}
+        onGuardado={(updated) => setVueloSel(updated)}
+        onSuccess={(msg) => showModal("success", "Actualización exitosa", msg)}
+      />
 
       <InfoModal
         open={modal.open}

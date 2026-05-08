@@ -1135,3 +1135,190 @@
     opacity: 1;
   }
 }
+
+/* ── Modal Editar Vuelo ── */
+.evOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: fadeIn 0.15s ease;
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.evModal {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lg, 0 8px 32px rgba(0, 0, 0, 0.18));
+  width: 100%;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow: hidden;
+  animation: slideUp 0.2s ease;
+}
+@keyframes slideUp {
+  from {
+    transform: translateY(16px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.evHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+.evHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.evTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-900);
+}
+.evClose {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-sm);
+  border: none;
+  background: transparent;
+  color: var(--text-500);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.evClose:hover {
+  background: var(--bg);
+  color: var(--text-900);
+}
+.evVueloInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex-wrap: wrap;
+  padding: 0.75rem 1.25rem;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.evCodigo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 99px;
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--rol-lider, #2563eb);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.evRuta {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-900);
+}
+.evAero {
+  font-size: 0.8rem;
+  color: var(--text-500);
+}
+.evBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  padding: 1.25rem;
+}
+.evErrorMsg {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  color: #dc2626;
+  margin: 0;
+}
+.evFooter {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.625rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+/* ── Botón editar vuelo en el preview ── */
+.vpEditarWrap {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+  margin-top: 0.25rem;
+}
+.vpEditarBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.875rem;
+  border-radius: var(--r-md);
+  border: 1.5px solid var(--rol-lider, #2563eb);
+  background: transparent;
+  color: var(--rol-lider, #2563eb);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.vpEditarBtn:hover {
+  background: rgba(37, 99, 235, 0.08);
+}
+.evFooter {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.625rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid var(--border);
+}
+@media (max-width: 600px) {
+  .evFooter {
+    flex-direction: row;
+  }
+  .evFooter .cancelarBtn,
+  .evFooter .guardarBtn {
+    flex: 1;
+    justify-content: center;
+    padding: 0.75rem 1rem;
+    font-size: 0.88rem;
+    min-height: 44px;
+    box-sizing: border-box;
+  }
+  .evFooter .guardarBtn {
+    gap: 0.375rem;
+  }
+  .evFooter .guardarBtn svg {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+  }
+}
