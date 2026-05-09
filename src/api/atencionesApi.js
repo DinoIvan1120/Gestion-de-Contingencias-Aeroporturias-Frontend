@@ -5,6 +5,14 @@ const BASE = "/api/v1/atenciones";
 const atencionesApi = {
   getAll: (params) => axiosClient.get(BASE, { params }),
   getById: (id) => axiosClient.get(`${BASE}/${id}`),
+
+  /**
+   * GET /atenciones/verificar-pnr?pnr=XXX&vueloId=YYY
+   * Verifica si el PNR ya está registrado para el vuelo antes de mostrar el modal de éxito.
+   */
+  verificarPnr: (pnr, vueloId) =>
+    axiosClient.get(`${BASE}/verificar-pnr`, { params: { pnr, vueloId } }),
+
   /** POST /atenciones/escanear-boarding-pass */
   escanearBoardingPass: (codigoBarras) =>
     axiosClient.post(`${BASE}/escanear-boarding-pass`, { codigoBarras }),

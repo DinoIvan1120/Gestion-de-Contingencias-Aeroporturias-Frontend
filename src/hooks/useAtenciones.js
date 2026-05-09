@@ -31,6 +31,13 @@ export function useDisponibilidad(registroId) {
   });
 }
 
+/** GET /atenciones/verificar-pnr?pnr=XXX&vueloId=YYY */
+export function useVerificarPnr() {
+  return useMutation({
+    mutationFn: ({ pnr, vueloId }) => atencionesApi.verificarPnr(pnr, vueloId),
+  });
+}
+
 /** POST /atenciones/escanear-boarding-pass */
 export function useEscanearBoardingPass() {
   return useMutation({

@@ -28,6 +28,7 @@ import {
   useDisponibilidad,
   useEscanearBoardingPass,
   useEscanearBoardingPassImagen,
+  useVerificarPnr,
   useCrearAtencion,
   useAsignarServicios,
   useGenerarPdf,
@@ -612,6 +613,7 @@ function FormularioAtencion({ registro, onVolver }) {
   const escanear = useEscanearBoardingPass();
   // 2. Dentro de FormularioAtencion, junto a los demás hooks de mutación:
   const escanearImg = useEscanearBoardingPassImagen();
+  const verificarPnr = useVerificarPnr();
   const crearAt = useCrearAtencion();
   const asignarSv = useAsignarServicios();
   const genPdf = useGenerarPdf();
@@ -711,6 +713,30 @@ function FormularioAtencion({ registro, onVolver }) {
           const apellido = partes[0]?.trim().toUpperCase() ?? "";
           const nombre = partes[1]?.trim().toUpperCase() ?? "";
 
+          // ── Verificar PNR duplicado antes de mostrar éxito ──
+          const vueloId = v?.id;
+          if (bp.pnr && vueloId) {
+            try {
+              const verfRes = await verificarPnr.mutateAsync({
+                pnr: bp.pnr,
+                vueloId,
+              });
+              const verf = verfRes.data.data;
+              if (verf?.duplicado) {
+                showModal(
+                  "warning",
+                  "Boarding pass duplicado",
+                  `El PNR ${bp.pnr} ya fue registrado en una atención anterior.\n\nPasajero: ${verf.nombrePasajero ?? bp.nombreCompleto}\nCorrelativo: ${verf.correlativo ?? "—"}\n\nNo se pueden registrar dos atenciones con el mismo PNR para este vuelo.`,
+                );
+                scanningRef.current = false;
+                return;
+              }
+            } catch {
+              // Si la verificación falla, continuar con flujo normal (no bloqueante)
+            }
+          }
+          // ── Fin verificación ──
+
           setPasajeros((prev) => {
             const copy = [...prev];
             copy[pxActivo] = {
@@ -762,6 +788,29 @@ function FormularioAtencion({ registro, onVolver }) {
       const partes = (bp.nombreCompleto ?? "").split("/");
       const apellido = partes[0]?.trim().toUpperCase() ?? "";
       const nombre = partes[1]?.trim().toUpperCase() ?? "";
+
+      // ── Verificar PNR duplicado antes de mostrar éxito ──
+      const vueloId = v?.id;
+      if (bp.pnr && vueloId) {
+        try {
+          const verfRes = await verificarPnr.mutateAsync({
+            pnr: bp.pnr,
+            vueloId,
+          });
+          const verf = verfRes.data.data;
+          if (verf?.duplicado) {
+            showModal(
+              "warning",
+              "Boarding pass duplicado",
+              `El PNR ${bp.pnr} ya fue registrado en una atención anterior.\n\nPasajero: ${verf.nombrePasajero ?? bp.nombreCompleto}\nCorrelativo: ${verf.correlativo ?? "—"}\n\nNo se pueden registrar dos atenciones con el mismo PNR para este vuelo.`,
+            );
+            return;
+          }
+        } catch {
+          // Si la verificación falla, continuar con flujo normal (no bloqueante)
+        }
+      }
+      // ── Fin verificación ──
 
       setPasajeros((prev) => {
         const copy = [...prev];
