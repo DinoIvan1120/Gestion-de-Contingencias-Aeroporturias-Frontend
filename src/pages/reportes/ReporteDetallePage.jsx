@@ -20,6 +20,7 @@ import {
   useReporteDetalle,
   useActualizarServicios,
   useRegenerarPdf,
+  useDescargarActualizado, // ← AGREGAR
 } from "../../hooks/useReportes";
 import { useObtenerUrlDescarga } from "../../hooks/useAtenciones"; // ← AGREGAR
 import { useProveedores } from "../../hooks/useProveedores";
@@ -76,7 +77,7 @@ function Desglose({ d }) {
   return (
     <div className={styles.desglose}>
       <div className={styles.desgloseHeader}>
-        <FileText size={16} color="#7C3AED" />
+        <FileText size={22} color="#7C3AED" />
         <span>Desglose de Costos del Servicio</span>
       </div>
 
@@ -84,7 +85,7 @@ function Desglose({ d }) {
       {d.hotel && (
         <div className={styles.svBloque}>
           <div className={styles.svBloqueHeader}>
-            <Hotel size={16} color="#22c55e" />
+            <Hotel size={17} color="#22c55e" />
             <span>Hotel: {d.hotel.proveedorNombre}</span>
             <span className={styles.svSubtotal} style={{ color: "#22c55e" }}>
               {fmt(d.hotel.subtotal)}
@@ -162,7 +163,7 @@ function Desglose({ d }) {
       {d.transporte && (
         <div className={styles.svBloque}>
           <div className={styles.svBloqueHeader}>
-            <Bus size={16} color="#3b82f6" />
+            <Bus size={17} color="#3b82f6" />
             <span>Transporte: {d.transporte.proveedorNombre}</span>
             <span className={styles.svSubtotal} style={{ color: "#3b82f6" }}>
               {fmt(d.transporte.subtotal)}
@@ -176,6 +177,10 @@ function Desglose({ d }) {
                   ? "Individual"
                   : "Grupal"}
               </span>
+              {/* ── AGREGAR cantidad ── */}
+              {d.transporte.cantidadPasajeros > 0 && (
+                <span>{d.transporte.cantidadPasajeros} pax</span>
+              )}
             </div>
           </div>
         </div>
@@ -185,13 +190,20 @@ function Desglose({ d }) {
       {d.restaurante && (
         <div className={styles.svBloque}>
           <div className={styles.svBloqueHeader}>
-            <UtensilsCrossed size={16} color="#f97316" />
+            <UtensilsCrossed size={17} color="#f97316" />
             <span>Restaurante: {d.restaurante.proveedorNombre}</span>
             <span className={styles.svSubtotal} style={{ color: "#f97316" }}>
               {fmt(d.restaurante.subtotal)}
             </span>
           </div>
           <div className={styles.svDetalle}>
+            {/* ── AGREGAR cantidad de cubiertos ── */}
+            {(d.restaurante.cantidadPasajeros ?? 0) > 0 && (
+              <div className={styles.svLinea}>
+                <span>Cantidad de cubiertos</span>
+                <span>{d.restaurante.cantidadPasajeros}</span>
+              </div>
+            )}
             {d.restaurante.desayuno && (
               <div className={styles.svLinea}>
                 <span>🌅 Desayuno</span>
@@ -242,7 +254,9 @@ function PanelEdicion({
   saving,
 }) {
   /* Estado del formulario: inicializado con los valores actuales */
-  const [hotelRid, setHotelRid] = useState(d.hotel?.vueloRecursoId ?? "");
+  const [hotelRid, setHotelRid] = useState(
+    String(d.hotel?.vueloRecursoId ?? ""), // ← forzar string
+  );
   const [tipoHab, setTipoHab] = useState(d.hotel?.tipoHabitacion ?? "SIMPLE");
   const [cantHab, setCantHab] = useState(d.hotel?.cantidadHabitaciones ?? 1);
   const [hDes, setHDes] = useState(d.hotel?.desayuno ?? false);
@@ -250,13 +264,22 @@ function PanelEdicion({
   const [hCena, setHCena] = useState(d.hotel?.cena ?? false);
   const [hSnack, setHSnack] = useState(d.hotel?.snack ?? false);
 
-  const [transRid, setTransRid] = useState(d.transporte?.vueloRecursoId ?? "");
+  const [transRid, setTransRid] = useState(
+    String(d.transporte?.vueloRecursoId ?? ""),
+  );
+
   const [tipoTrans, setTipoTrans] = useState(
     d.transporte?.tipoTransporte ?? "INDIVIDUAL",
   );
   const [cantPax, setCantPax] = useState(d.transporte?.cantidadPasajeros ?? 1);
 
-  const [restRid, setRestRid] = useState(d.restaurante?.vueloRecursoId ?? "");
+  const [restRid, setRestRid] = useState(
+    String(d.restaurante?.vueloRecursoId ?? ""),
+  );
+
+  const [cantRest, setCantRest] = useState(
+    d.restaurante?.cantidadPasajeros ?? 1, // ← ahora cantidadPasajeros viene del backend
+  );
   const [rDes, setRDes] = useState(d.restaurante?.desayuno ?? false);
   const [rAlm, setRAlm] = useState(d.restaurante?.almuerzo ?? false);
   const [rCena, setRCena] = useState(d.restaurante?.cena ?? false);
@@ -271,6 +294,8 @@ function PanelEdicion({
       body.hotelAlmuerzo = hAlm;
       body.hotelCena = hCena;
       body.hotelSnack = hSnack;
+      body.fechaIngreso = d.hotel?.fechaIngreso ?? null; // ← AGREGAR
+      body.fechaSalida = d.hotel?.fechaSalida ?? null; // ← AGREGAR
     }
     if (transRid) {
       body.transporteVueloRecursoId = Number(transRid);
@@ -282,6 +307,7 @@ function PanelEdicion({
       body.restauranteDesayuno = rDes;
       body.restauranteAlmuerzo = rAlm;
       body.restauranteCena = rCena;
+      body.cantidadCubiertos = cantRest; // ← AGREGAR
     }
     onGuardar(body);
   };
@@ -304,7 +330,7 @@ function PanelEdicion({
             {hoteles.map((h) => (
               <option
                 key={h.vueloRecursoId ?? h.id}
-                value={h.vueloRecursoId ?? h.id}
+                value={String(h.vueloRecursoId ?? h.id)} // ← forzar string
               >
                 {h.proveedorNombre ?? h.nombreProveedor ?? h.nombre}
               </option>
@@ -393,7 +419,7 @@ function PanelEdicion({
             {transportes.map((t) => (
               <option
                 key={t.vueloRecursoId ?? t.id}
-                value={t.vueloRecursoId ?? t.id}
+                value={String(t.vueloRecursoId ?? t.id)} // ← AGREGAR String()
               >
                 {t.proveedorNombre ?? t.nombreProveedor ?? t.nombre}
               </option>
@@ -456,7 +482,7 @@ function PanelEdicion({
             {restaurantes.map((r) => (
               <option
                 key={r.vueloRecursoId ?? r.id}
-                value={r.vueloRecursoId ?? r.id}
+                value={String(r.vueloRecursoId ?? r.id)} // ← AGREGAR String()
               >
                 {r.proveedorNombre ?? r.nombreProveedor ?? r.nombre}
               </option>
@@ -468,6 +494,13 @@ function PanelEdicion({
             <label className={styles.editLabel}>
               Servicios del Restaurante
             </label>
+            {/* ── AGREGAR stepper de cubiertos ── */}
+            <Stepper
+              label="Cantidad de cubiertos"
+              value={cantRest}
+              onChange={setCantRest}
+              min={1}
+            />
             <div className={styles.chkRow}>
               <Chk
                 checked={rDes}
@@ -545,6 +578,8 @@ export default function ReporteDetallePage() {
     message: "",
   });
 
+  const [emailModal, setEmailModal] = useState({ open: false, correo: "" });
+
   // Dentro del componente, junto a los otros hooks:
   const descargar = useObtenerUrlDescarga();
 
@@ -565,12 +600,32 @@ export default function ReporteDetallePage() {
     }
   };
 
+  // Dentro del componente, junto a los otros hooks:
+  const descargarActualizado = useDescargarActualizado();
+
+  // Agregar handler:
+  const handleDescargarActualizado = async () => {
+    try {
+      const res = await descargarActualizado.mutateAsync(d.atencionId);
+      const url = res.data?.data?.downloadUrl;
+      if (url) window.open(url, "_blank");
+      else
+        showModal("error", "Error", "No se pudo generar la URL de descarga.");
+    } catch (err) {
+      showModal(
+        "error",
+        "Error",
+        err.response?.data?.message ?? "Error al generar PDF actualizado.",
+      );
+    }
+  };
+
   const showModal = (type, title, msg) =>
     setModal({ open: true, type, title, message: msg });
 
   const handleGuardar = async (body) => {
     try {
-      await actualizar.mutateAsync({ id: Number(id), ...body });
+      await actualizar.mutateAsync({ id: d.atencionId, ...body });
       setEditMode(false);
       showModal(
         "success",
@@ -586,25 +641,37 @@ export default function ReporteDetallePage() {
     }
   };
 
-  const handleRegenerarPdf = async () => {
+  // Reemplazar handleRegenerarPdf:
+  const handleAbrirModalEmail = () => {
+    setEmailModal({ open: true, correo: d.correoPasajero ?? "" });
+  };
+
+  const handleConfirmarEnvioEmail = async () => {
+    const correo = emailModal.correo.trim();
+    if (!correo || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
+      showModal(
+        "error",
+        "Correo inválido",
+        "Ingresa un correo electrónico válido.",
+      );
+      return;
+    }
+    setEmailModal({ open: false, correo: "" });
     try {
-      const res = await regenerar.mutateAsync(Number(id));
-      const url = res.data.data?.pdfUrl;
+      await regenerar.mutateAsync(d.atencionId);
       showModal(
         "success",
-        "PDF generado",
-        "El PDF fue regenerado y enviado al correo del pasajero.",
+        "PDF enviado",
+        `El PDF fue regenerado y enviado a ${correo}.`,
       );
-      //   if (url) window.open(url, "_blank");
     } catch (err) {
       showModal(
         "error",
         "Error",
-        err.response?.data?.message ?? "Error al regenerar PDF.",
+        err.response?.data?.message ?? "Error al enviar PDF.",
       );
     }
   };
-
   if (isLoading)
     return (
       <div className={styles.centered}>
@@ -761,9 +828,36 @@ export default function ReporteDetallePage() {
         {editMode && (
           <PanelEdicion
             d={d}
-            hoteles={hoteles}
-            transportes={transportes}
-            restaurantes={restaurantes}
+            hoteles={
+              d.hotel
+                ? [
+                    {
+                      vueloRecursoId: d.hotel.vueloRecursoId,
+                      proveedorNombre: d.hotel.proveedorNombre,
+                    },
+                  ]
+                : []
+            }
+            transportes={
+              d.transporte
+                ? [
+                    {
+                      vueloRecursoId: d.transporte.vueloRecursoId,
+                      proveedorNombre: d.transporte.proveedorNombre,
+                    },
+                  ]
+                : []
+            }
+            restaurantes={
+              d.restaurante
+                ? [
+                    {
+                      vueloRecursoId: d.restaurante.vueloRecursoId,
+                      proveedorNombre: d.restaurante.proveedorNombre,
+                    },
+                  ]
+                : []
+            }
             onGuardar={handleGuardar}
             onCancelar={() => setEditMode(false)}
             saving={actualizar.isPending}
@@ -780,7 +874,7 @@ export default function ReporteDetallePage() {
               className={styles.btnEditar}
               onClick={() => setEditMode(true)}
             >
-              <Edit2 size={15} /> Editar
+              <Edit2 size={15} /> Editar información
             </button>
             {/* ── AGREGAR — Descargar PDF ── */}
             <button
@@ -793,7 +887,26 @@ export default function ReporteDetallePage() {
               ) : (
                 <Download size={15} />
               )}
-              {descargar.isPending ? "Descargando..." : "Descargar PDF"}
+              {descargar.isPending
+                ? "Descargando..."
+                : "Descargar PDF Original"}
+            </button>
+
+            {/* Descarga el PDF que está en S3 — el último generado */}
+            {/* Regenera con cambios actuales y descarga — SIN email */}
+            <button
+              className={styles.btnDescargarActualizado}
+              onClick={handleDescargarActualizado} // ← CORREGIR (antes era handleDescargarPdf)
+              disabled={descargarActualizado.isPending}
+            >
+              {descargarActualizado.isPending ? (
+                <Spinner size="sm" />
+              ) : (
+                <Download size={15} />
+              )}
+              {descargarActualizado.isPending
+                ? "Generando..."
+                : "Descargar PDF Actualizado"}
             </button>
             {/* <button
               className={styles.btnDescargar}
@@ -803,11 +916,13 @@ export default function ReporteDetallePage() {
             </button> */}
             <button
               className={styles.btnEnviar}
-              onClick={handleRegenerarPdf}
+              onClick={handleAbrirModalEmail} // ← CAMBIAR
               disabled={regenerar.isPending}
             >
               {regenerar.isPending ? <Spinner size="sm" /> : <Send size={15} />}
-              {regenerar.isPending ? "Generando..." : "Enviar Email"}
+              {regenerar.isPending
+                ? "Enviando..."
+                : "Enviar PDF actualizado Email"}
             </button>
           </div>
         )}
@@ -820,6 +935,52 @@ export default function ReporteDetallePage() {
         message={modal.message}
         onClose={() => setModal((m) => ({ ...m, open: false }))}
       />
+      {/* ─── Modal correo para enviar PDF ─── */}
+      {emailModal.open && (
+        <div className={styles.emailModalOverlay}>
+          <div className={styles.emailModalBox}>
+            <h3 className={styles.emailModalTitle}>
+              <Send size={17} /> Enviar PDF al Pasajero
+            </h3>
+            <p className={styles.emailModalDesc}>
+              Confirma el correo al que se enviará el voucher PDF actualizado.
+            </p>
+            <input
+              className={styles.emailModalInput}
+              type="email"
+              placeholder="correo@ejemplo.com"
+              value={emailModal.correo}
+              onChange={(e) =>
+                setEmailModal((m) => ({ ...m, correo: e.target.value }))
+              }
+              onKeyDown={(e) =>
+                e.key === "Enter" && handleConfirmarEnvioEmail()
+              }
+              autoFocus
+            />
+            <div className={styles.emailModalActions}>
+              <button
+                className={styles.emailModalCancel}
+                onClick={() => setEmailModal({ open: false, correo: "" })}
+              >
+                Cancelar
+              </button>
+              <button
+                className={styles.emailModalConfirm}
+                onClick={handleConfirmarEnvioEmail}
+                disabled={!emailModal.correo.trim() || regenerar.isPending}
+              >
+                {regenerar.isPending ? (
+                  <Spinner size="sm" />
+                ) : (
+                  <Send size={14} />
+                )}
+                {regenerar.isPending ? "Enviando..." : "Confirmar y Enviar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

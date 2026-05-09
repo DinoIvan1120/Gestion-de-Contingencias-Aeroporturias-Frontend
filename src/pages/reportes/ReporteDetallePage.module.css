@@ -289,6 +289,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 0.5rem;
+  margin-top: 0.75rem;
 }
 .chkBtn {
   display: flex;
@@ -510,7 +511,118 @@
   color: var(--text-500);
 }
 
-/* ── Responsive ── */
+.btnDescargarActualizado {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.7rem 1.5rem;
+  background: #0891b2; /* cyan — diferente a verde para distinguirlo */
+  color: #fff;
+  border: none;
+  border-radius: var(--r-md);
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btnDescargarActualizado:hover {
+  background: #0e7490;
+}
+.btnDescargarActualizado:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.emailModalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+.emailModalBox {
+  background: var(--bg-card, #fff);
+  border-radius: 14px;
+  padding: 28px 24px 24px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.22);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.emailModalTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-900, #111);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+.emailModalDesc {
+  font-size: 0.85rem;
+  color: var(--text-500, #666);
+  margin: 0;
+}
+.emailModalInput {
+  border: 1.5px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  color: var(--text-900, #111);
+  background: var(--bg, #f9f9f9);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.emailModalInput:focus {
+  border-color: #7c3aed;
+}
+.emailModalActions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+.emailModalCancel {
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border, #e2e8f0);
+  background: transparent;
+  color: var(--text-600, #555);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.emailModalCancel:hover {
+  background: var(--bg, #f0f0f0);
+}
+.emailModalConfirm {
+  padding: 9px 18px;
+  border-radius: 8px;
+  border: none;
+  background: #7c3aed;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: opacity 0.15s;
+}
+.emailModalConfirm:hover:not(:disabled) {
+  opacity: 0.88;
+}
+.emailModalConfirm:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Reemplaza el bloque @media (max-width: 768px) existente por: */
 @media (max-width: 768px) {
   .infoGrid {
     grid-template-columns: 1fr 1fr;
@@ -520,6 +632,20 @@
   }
   .radioGroup {
     flex-direction: column;
+    gap: 0.5rem;
+  }
+  .radioBtn {
+    width: 100%;
+    justify-content: flex-start;
+    padding: 0.65rem 1rem;
+  }
+  .chkRow {
+    grid-template-columns: 1fr; /* ← una columna en móvil */
+    margin-top: 0.75rem;
+  }
+  .chkBtn {
+    width: 100%;
+    padding: 0.65rem 1rem;
   }
   .acciones {
     flex-direction: column;
@@ -527,6 +653,37 @@
   .acciones button {
     width: 100%;
     justify-content: center;
+  }
+  .editActions {
+    flex-direction: column-reverse;
+  }
+  .editActions button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .svBloqueHeader {
+    font-size: 0.9rem; /* era 0.9rem, se agranda */
+    gap: 0.625rem; /* más separación ícono-texto */
+    flex-wrap: wrap; /* evita que se comprima */
+  }
+
+  .svBloqueHeader svg {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0; /* el ícono no se encoge */
+  }
+
+  .svSubtotal {
+    font-size: 1.05rem; /* el monto también más visible */
+  }
+
+  .svBloque {
+    padding: 1rem 0.875rem;
+  }
+
+  .desglose {
+    padding: 1rem 0.875rem;
   }
 }
 @media (max-width: 520px) {

@@ -82,3 +82,9 @@ export function useRegenerarPdf() {
     mutationFn: (id) => reportesApi.regenerarPdf(id),
   });
 }
+
+export function useDescargarActualizado() {
+  return useMutation({
+    mutationFn: (id) => reportesApi.descargarActualizado(id),
+  });
+}

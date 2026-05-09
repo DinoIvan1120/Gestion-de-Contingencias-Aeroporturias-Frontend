@@ -12,6 +12,9 @@ const reportesApi = {
   actualizarServicios: (id, body) =>
     axiosClient.put(`${BASE}/${id}/servicios`, body),
   regenerarPdf: (id) => axiosClient.post(`${BASE}/${id}/regenerar-pdf`),
+  descargarActualizado: (
+    id, // ← AGREGAR
+  ) => axiosClient.post(`${BASE}/${id}/descargar-actualizado`),
 };
 
 export default reportesApi;
