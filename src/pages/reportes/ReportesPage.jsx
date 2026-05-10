@@ -296,6 +296,7 @@ export default function ReportesPage() {
                   "F. Creación",
                   "F. Actualización",
                   "Generado por",
+                  "Rol",
                   "Fecha Vuelo",
                   "Pasajero",
                   "Vuelo",
