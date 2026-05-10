@@ -82,7 +82,7 @@ export const useRegenerarPdf = () =>
     mutationFn: ({ id, correoDestino, telefono }) =>
       api.post(`/api/v1/atenciones/${id}/enviar`, {
         correoDestino,
-        telefono: telefono || null, // ← TWILIO: opcional
+        telefono: telefono || null,
       }),
   });
 
