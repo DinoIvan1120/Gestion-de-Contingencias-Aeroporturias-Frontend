@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import reportesApi from "../api/reportesApi";
+import atencionesApi from "../api/atencionesApi"; // ← AGREGAR
 
 export function useReportes(filtros, pageable) {
   return useQuery({
@@ -80,7 +81,8 @@ export function useActualizarServicios() {
 export const useRegenerarPdf = () =>
   useMutation({
     mutationFn: ({ id, correoDestino, telefono }) =>
-      api.post(`/api/v1/atenciones/${id}/enviar`, {
+      atencionesApi.reenviarPdf(id, {
+        // ← CAMBIAR api.post por atencionesApi.reenviarPdf
         correoDestino,
         telefono: telefono || null,
       }),
