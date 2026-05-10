@@ -22,7 +22,10 @@ import {
   useRegenerarPdf,
   useDescargarActualizado, // ← AGREGAR
 } from "../../hooks/useReportes";
-import { useObtenerUrlDescarga } from "../../hooks/useAtenciones"; // ← AGREGAR
+import {
+  useObtenerUrlDescarga,
+  useDisponibilidad,
+} from "../../hooks/useAtenciones"; // ← AGREGAR
 import { useProveedores } from "../../hooks/useProveedores";
 import { formatearMonto, formatearFecha } from "../../utils/formatters";
 import Badge from "../../components/ui/Badge.jsx";
@@ -244,15 +247,58 @@ function Desglose({ d }) {
 /* ══════════════════════════════════════
    PANEL DE EDICIÓN
    ══════════════════════════════════════ */
-function PanelEdicion({
-  d,
-  hoteles,
-  transportes,
-  restaurantes,
-  onGuardar,
-  onCancelar,
-  saving,
-}) {
+function PanelEdicion({ d, recursos, disp, onGuardar, onCancelar, saving }) {
+  // Separar recursos por tipo (vienen del registro diario completo)
+  const hoteles = (recursos ?? []).filter((r) => r.proveedorTipo === "HOTEL");
+  const transportes = (recursos ?? []).filter(
+    (r) => r.proveedorTipo === "TRANSPORTE",
+  );
+  const restaurantes = (recursos ?? []).filter(
+    (r) => r.proveedorTipo === "RESTAURANTE",
+  );
+
+  // Helpers de disponibilidad en tiempo real
+  const getDispHotel = (r) =>
+    (disp?.hoteles ?? []).find(
+      (d) => d.vueloRecursoId === (r.vueloRecursoId ?? r.id),
+    );
+  const getDispTrans = (r) =>
+    (disp?.transportes ?? []).find(
+      (d) => d.vueloRecursoId === (r.vueloRecursoId ?? r.id),
+    );
+  const getDispRest = (r) =>
+    (disp?.restaurantes ?? []).find(
+      (d) => d.vueloRecursoId === (r.vueloRecursoId ?? r.id),
+    );
+
+  // Texto del label con disponibilidad
+  const labelHotel = (h) => {
+    const dd = getDispHotel(h);
+    const nombre = h.proveedorNombre ?? h.nombreProveedor ?? h.nombre;
+    const habTotal =
+      (h.habitacionesSimples ?? 0) +
+      (h.habitacionesDobles ?? 0) +
+      (h.habitacionesMatrimoniales ?? 0);
+    const habDisp = dd?.totalDisponibles ?? habTotal;
+    return habTotal > 0
+      ? `${nombre} (${habDisp}/${habTotal} hab. disp.)`
+      : nombre;
+  };
+  const labelTrans = (t) => {
+    const dd = getDispTrans(t);
+    const nombre = t.proveedorNombre ?? t.nombreProveedor ?? t.nombre;
+    if (dd)
+      return `${nombre} (${dd.capacidadDisponible}/${dd.capacidadTotal} pax disp.)`;
+    return nombre;
+  };
+  const labelRest = (r) => {
+    const dd = getDispRest(r);
+    const nombre = r.proveedorNombre ?? r.nombreProveedor ?? r.nombre;
+    if (dd)
+      return `${nombre} (${dd.capacidadDisponible}/${dd.capacidadTotal} cubiertos disp.)`;
+    return nombre;
+  };
+
   /* Estado del formulario: inicializado con los valores actuales */
   const [hotelRid, setHotelRid] = useState(
     String(d.hotel?.vueloRecursoId ?? ""), // ← forzar string
@@ -294,6 +340,14 @@ function PanelEdicion({
     return v;
   };
 
+  // Fechas editables — se inicializan con los valores actuales del hotel
+  const [fechaIngreso, setFechaIngreso] = useState(
+    () => toIsoDate(d.hotel?.fechaIngreso) ?? "",
+  );
+  const [fechaSalida, setFechaSalida] = useState(
+    () => toIsoDate(d.hotel?.fechaSalida) ?? "",
+  );
+
   const handleGuardar = () => {
     const body = {};
     if (hotelRid) {
@@ -305,8 +359,8 @@ function PanelEdicion({
       body.hotelCena = hCena;
       body.hotelSnack = hSnack;
       // Después:
-      body.fechaIngreso = toIsoDate(d.hotel?.fechaIngreso);
-      body.fechaSalida = toIsoDate(d.hotel?.fechaSalida);
+      body.fechaIngreso = fechaIngreso || null;
+      body.fechaSalida = fechaSalida || null;
     }
     if (transRid) {
       body.transporteVueloRecursoId = Number(transRid);
@@ -337,19 +391,46 @@ function PanelEdicion({
             value={hotelRid}
             onChange={(e) => setHotelRid(e.target.value)}
           >
-            <option value="">Seleccionar hotel...</option>
-            {hoteles.map((h) => (
-              <option
-                key={h.vueloRecursoId ?? h.id}
-                value={String(h.vueloRecursoId ?? h.id)} // ← forzar string
-              >
-                {h.proveedorNombre ?? h.nombreProveedor ?? h.nombre}
-              </option>
-            ))}
+            <option value="">Sin hotel</option>
+            {hoteles.map((h) => {
+              const rid = String(h.vueloRecursoId ?? h.id);
+              const dd = getDispHotel(h);
+              const agotado =
+                dd?.agotado === true || dd?.totalDisponibles === 0;
+              return (
+                <option
+                  key={rid}
+                  value={rid}
+                  disabled={agotado && hotelRid !== rid}
+                >
+                  {labelHotel(h)}
+                  {agotado ? " — Sin disponibilidad" : ""}
+                </option>
+              );
+            })}
           </select>
         </div>
         {hotelRid && (
           <>
+            <div className={styles.editField}>
+              <label className={styles.editLabel}>📅 Check-in</label>
+              <input
+                type="date"
+                className={styles.editSelect}
+                value={fechaIngreso}
+                onChange={(e) => setFechaIngreso(e.target.value)}
+              />
+            </div>
+            <div className={styles.editField}>
+              <label className={styles.editLabel}>📅 Check-out</label>
+              <input
+                type="date"
+                className={styles.editSelect}
+                value={fechaSalida}
+                min={fechaIngreso}
+                onChange={(e) => setFechaSalida(e.target.value)}
+              />
+            </div>
             <div className={styles.editField}>
               <label className={styles.editLabel}>Tipo de Habitación</label>
               <div className={styles.radioGroup}>
@@ -426,15 +507,23 @@ function PanelEdicion({
             value={transRid}
             onChange={(e) => setTransRid(e.target.value)}
           >
-            <option value="">Seleccionar transporte...</option>
-            {transportes.map((t) => (
-              <option
-                key={t.vueloRecursoId ?? t.id}
-                value={String(t.vueloRecursoId ?? t.id)} // ← AGREGAR String()
-              >
-                {t.proveedorNombre ?? t.nombreProveedor ?? t.nombre}
-              </option>
-            ))}
+            <option value="">Sin transporte</option>
+            {transportes.map((t) => {
+              const rid = String(t.vueloRecursoId ?? t.id);
+              const dd = getDispTrans(t);
+              const agotado =
+                dd?.agotado === true || dd?.capacidadDisponible === 0;
+              return (
+                <option
+                  key={rid}
+                  value={rid}
+                  disabled={agotado && transRid !== rid}
+                >
+                  {labelTrans(t)}
+                  {agotado ? " — Sin disponibilidad" : ""}
+                </option>
+              );
+            })}
           </select>
         </div>
         {transRid && (
@@ -489,15 +578,23 @@ function PanelEdicion({
             value={restRid}
             onChange={(e) => setRestRid(e.target.value)}
           >
-            <option value="">Seleccionar restaurante...</option>
-            {restaurantes.map((r) => (
-              <option
-                key={r.vueloRecursoId ?? r.id}
-                value={String(r.vueloRecursoId ?? r.id)} // ← AGREGAR String()
-              >
-                {r.proveedorNombre ?? r.nombreProveedor ?? r.nombre}
-              </option>
-            ))}
+            <option value="">Sin restaurante</option>
+            {restaurantes.map((r) => {
+              const rid = String(r.vueloRecursoId ?? r.id);
+              const dd = getDispRest(r);
+              const agotado =
+                dd?.agotado === true || dd?.capacidadDisponible === 0;
+              return (
+                <option
+                  key={rid}
+                  value={rid}
+                  disabled={agotado && restRid !== rid}
+                >
+                  {labelRest(r)}
+                  {agotado ? " — Sin disponibilidad" : ""}
+                </option>
+              );
+            })}
           </select>
         </div>
         {restRid && (
@@ -565,21 +662,23 @@ export default function ReporteDetallePage() {
   const actualizar = useActualizarServicios();
   const regenerar = useRegenerarPdf();
 
-  /* Proveedores activos para los selectores de edición */
-  const { data: hPage } = useProveedores({ tipo: "HOTEL", page: 0, size: 50 });
-  const { data: tPage } = useProveedores({
-    tipo: "TRANSPORTE",
-    page: 0,
-    size: 50,
-  });
-  const { data: rPage } = useProveedores({
-    tipo: "RESTAURANTE",
-    page: 0,
-    size: 50,
-  });
-  const hoteles = hPage?.content ?? [];
-  const transportes = tPage?.content ?? [];
-  const restaurantes = rPage?.content ?? [];
+  // Disponibilidad en tiempo real del registro diario del vuelo
+  // d?.registroVueloDiarioId viene del backend (nuevo campo agregado)
+  const { data: disp, refetch: refetchDisp } = useDisponibilidad(
+    d?.registroVueloDiarioId,
+  );
+
+  const recursosDelVuelo = [
+    ...(disp?.hoteles ?? []).map((r) => ({ ...r, proveedorTipo: "HOTEL" })),
+    ...(disp?.transportes ?? []).map((r) => ({
+      ...r,
+      proveedorTipo: "TRANSPORTE",
+    })),
+    ...(disp?.restaurantes ?? []).map((r) => ({
+      ...r,
+      proveedorTipo: "RESTAURANTE",
+    })),
+  ];
 
   const [editMode, setEditMode] = useState(false);
   const [modal, setModal] = useState({
@@ -589,7 +688,11 @@ export default function ReporteDetallePage() {
     message: "",
   });
 
-  const [emailModal, setEmailModal] = useState({ open: false, correo: "" });
+  const [emailModal, setEmailModal] = useState({
+    open: false,
+    correo: "",
+    telefono: "",
+  });
 
   // Dentro del componente, junto a los otros hooks:
   const descargar = useObtenerUrlDescarga();
@@ -638,6 +741,7 @@ export default function ReporteDetallePage() {
     try {
       await actualizar.mutateAsync({ id: d.atencionId, ...body });
       setEditMode(false);
+      refetchDisp?.();
       showModal(
         "success",
         "Actualizado",
@@ -654,11 +758,16 @@ export default function ReporteDetallePage() {
 
   // Reemplazar handleRegenerarPdf:
   const handleAbrirModalEmail = () => {
-    setEmailModal({ open: true, correo: d.correoPasajero ?? "" });
+    setEmailModal({
+      open: true,
+      correo: d.correoPasajero ?? "",
+      telefono: d.telefonoPasajero ?? "", // ← TWILIO: pre-llenar si existe
+    });
   };
 
   const handleConfirmarEnvioEmail = async () => {
     const correo = emailModal.correo.trim();
+    const telefono = emailModal.telefono.trim();
     if (!correo || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
       showModal(
         "error",
@@ -667,14 +776,17 @@ export default function ReporteDetallePage() {
       );
       return;
     }
-    setEmailModal({ open: false, correo: "" });
+    setEmailModal({ open: false, correo: "", telefono: "" });
     try {
-      await regenerar.mutateAsync(d.atencionId);
-      showModal(
-        "success",
-        "PDF enviado",
-        `El PDF fue regenerado y enviado a ${correo}.`,
-      );
+      await regenerar.mutateAsync({
+        id: d.atencionId,
+        correoDestino: correo,
+        telefono: telefono || null,
+      });
+      const msg = telefono
+        ? `El PDF fue enviado a ${correo} y por WhatsApp al ${telefono}.`
+        : `El PDF fue regenerado y enviado a ${correo}.`;
+      showModal("success", "PDF enviado", msg);
     } catch (err) {
       showModal(
         "error",
@@ -762,6 +874,21 @@ export default function ReporteDetallePage() {
           <div className={styles.infoField}>
             <label>Correo electrónico</label>
             <div className={styles.infoVal}>{d.correoPasajero ?? "—"}</div>
+          </div>
+
+          <div className={styles.infoField}>
+            <label>Teléfono (WhatsApp)</label>
+            <div className={styles.infoVal}>
+              {d.telefonoPasajero ? (
+                <span style={{ color: "var(--success)", fontWeight: 500 }}>
+                  {d.telefonoPasajero}
+                </span>
+              ) : (
+                <span style={{ color: "var(--text-400)", fontStyle: "italic" }}>
+                  No registrado
+                </span>
+              )}
+            </div>
           </div>
           <div className={styles.infoField}>
             <label>PNR</label>
@@ -856,36 +983,8 @@ export default function ReporteDetallePage() {
         {editMode && (
           <PanelEdicion
             d={d}
-            hoteles={
-              d.hotel
-                ? [
-                    {
-                      vueloRecursoId: d.hotel.vueloRecursoId,
-                      proveedorNombre: d.hotel.proveedorNombre,
-                    },
-                  ]
-                : []
-            }
-            transportes={
-              d.transporte
-                ? [
-                    {
-                      vueloRecursoId: d.transporte.vueloRecursoId,
-                      proveedorNombre: d.transporte.proveedorNombre,
-                    },
-                  ]
-                : []
-            }
-            restaurantes={
-              d.restaurante
-                ? [
-                    {
-                      vueloRecursoId: d.restaurante.vueloRecursoId,
-                      proveedorNombre: d.restaurante.proveedorNombre,
-                    },
-                  ]
-                : []
-            }
+            recursos={recursosDelVuelo}
+            disp={disp}
             onGuardar={handleGuardar}
             onCancelar={() => setEditMode(false)}
             saving={actualizar.isPending}
@@ -905,7 +1004,7 @@ export default function ReporteDetallePage() {
               <Edit2 size={15} /> Editar información
             </button>
             {/* ── AGREGAR — Descargar PDF ── */}
-            <button
+            {/* <button
               className={styles.btnDescargar}
               onClick={handleDescargarPdf}
               disabled={descargar.isPending}
@@ -918,7 +1017,7 @@ export default function ReporteDetallePage() {
               {descargar.isPending
                 ? "Descargando..."
                 : "Descargar PDF Original"}
-            </button>
+            </button> */}
 
             {/* Descarga el PDF que está en S3 — el último generado */}
             {/* Regenera con cambios actuales y descarga — SIN email */}
@@ -986,6 +1085,38 @@ export default function ReporteDetallePage() {
               }
               autoFocus
             />
+            {/* TWILIO — Campo teléfono opcional */}
+            <label
+              style={{
+                fontSize: "0.8rem",
+                color: "var(--text-400)",
+                marginTop: "0.75rem",
+                display: "block",
+              }}
+            >
+              Teléfono WhatsApp{" "}
+              <span style={{ fontWeight: 400 }}>— Opcional</span>
+            </label>
+            <input
+              className={styles.emailModalInput}
+              type="tel"
+              placeholder="+51 987 654 321"
+              value={emailModal.telefono}
+              onChange={(e) =>
+                setEmailModal((m) => ({ ...m, telefono: e.target.value }))
+              }
+            />
+            <p
+              style={{
+                fontSize: "0.7rem",
+                color: "var(--text-400)",
+                marginTop: 2,
+                marginBottom: "0.75rem",
+              }}
+            >
+              Si se ingresa un número, el voucher se enviará también por
+              WhatsApp. Incluye código de país. Ej: +51 para Perú
+            </p>
             <div className={styles.emailModalActions}>
               <button
                 className={styles.emailModalCancel}

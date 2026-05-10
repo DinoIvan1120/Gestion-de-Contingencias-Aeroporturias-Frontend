@@ -64,7 +64,14 @@ const EMPTY_SV = {
   fechaIngreso: HOY, // ← AGREGAR
   fechaSalida: "", // ← AGREGAR
 };
-const EMPTY_PX = { nombre: "", apellido: "", pnr: "", correo: "", ...EMPTY_SV };
+const EMPTY_PX = {
+  nombre: "",
+  apellido: "",
+  pnr: "",
+  correo: "",
+  telefono: "",
+  ...EMPTY_SV,
+};
 
 /* ══════════════════════
    Helpers
@@ -744,6 +751,7 @@ function FormularioAtencion({ registro, onVolver }) {
               nombre,
               apellido,
               pnr: bp.pnr ?? "",
+              telefono: "", // ← El agente puede completarlo manualmente tras escanear
             };
             return copy;
           });
@@ -1009,6 +1017,7 @@ function FormularioAtencion({ registro, onVolver }) {
         apellido: px.apellido.toUpperCase(),
         pnr: px.pnr.toUpperCase(),
         correo: px.correo,
+        telefono: px.telefono?.trim() || null, // ← TWILIO: opcional, null si está vacío
         codigoBarras:
           !bpTexto.startsWith("data:image") && bpTexto ? bpTexto : null,
         fechaEmision,
@@ -1584,6 +1593,38 @@ function FormularioAtencion({ registro, onVolver }) {
                     placeholder="pasajero@ejemplo.com"
                   />
                 </div>
+
+                {/* Teléfono WhatsApp */}
+                <div className={styles.bpManualField}>
+                  <label className={styles.bpManualLabel}>
+                    Teléfono (WhatsApp)
+                    <span
+                      style={{
+                        color: "var(--text-400)",
+                        fontWeight: 400,
+                        marginLeft: 4,
+                      }}
+                    >
+                      — Opcional
+                    </span>
+                  </label>
+                  <input
+                    type="tel"
+                    className={styles.bpManualInput}
+                    value={px.telefono}
+                    onChange={(e) => setPx("telefono", e.target.value)}
+                    placeholder="+51 987 654 321"
+                  />
+                  <span
+                    style={{
+                      fontSize: "0.7rem",
+                      color: "var(--text-400)",
+                      marginTop: 2,
+                    }}
+                  >
+                    Incluye código de país. Ej: +51 para Perú
+                  </span>
+                </div>
               </div>
 
               {/* Indicador de completitud */}
@@ -1693,6 +1734,37 @@ function FormularioAtencion({ registro, onVolver }) {
                   onChange={(e) => setPx("correo", e.target.value)}
                   placeholder="pasajero@ejemplo.com"
                 />
+              </div>
+
+              <div className={styles.pxField}>
+                <label className={styles.pxLabel}>
+                  Teléfono (WhatsApp)
+                  <span
+                    style={{
+                      color: "var(--text-400)",
+                      fontWeight: 400,
+                      marginLeft: 4,
+                    }}
+                  >
+                    — Opcional
+                  </span>
+                </label>
+                <input
+                  type="tel"
+                  className={styles.pxInput}
+                  value={px.telefono}
+                  onChange={(e) => setPx("telefono", e.target.value)}
+                  placeholder="+51 987 654 321"
+                />
+                <span
+                  style={{
+                    fontSize: "0.7rem",
+                    color: "var(--text-400)",
+                    marginTop: 2,
+                  }}
+                >
+                  Incluye código de país. Ej: +51 para Perú
+                </span>
               </div>
             </div>
             <button className={styles.agregarPxBtn} onClick={handleAgregarPx}>
@@ -2120,8 +2192,8 @@ function FormularioAtencion({ registro, onVolver }) {
           >
             {loading ? <Spinner size="sm" /> : <Send size={16} />}
             {modoEnvio === "un_correo"
-              ? "Generar y Enviar"
-              : "Generar y Enviar (individual)"}
+              ? "Generar PDF y Enviar"
+              : "Generar PDF y Enviar (individual)"}
           </button>
         </div>
       </div>

@@ -77,11 +77,14 @@ export function useActualizarServicios() {
   });
 }
 
-export function useRegenerarPdf() {
-  return useMutation({
-    mutationFn: (id) => reportesApi.regenerarPdf(id),
+export const useRegenerarPdf = () =>
+  useMutation({
+    mutationFn: ({ id, correoDestino, telefono }) =>
+      api.post(`/api/v1/atenciones/${id}/enviar`, {
+        correoDestino,
+        telefono: telefono || null, // ← TWILIO: opcional
+      }),
   });
-}
 
 export function useDescargarActualizado() {
   return useMutation({
