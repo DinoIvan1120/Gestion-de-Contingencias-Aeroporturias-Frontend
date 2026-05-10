@@ -303,3 +303,18 @@
     max-height: 1200px;
   } /* más alto en móvil */
 }
+
+/* Rol badge al lado de Generado por */
+.rolBadge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #ede9fe;
+  color: #6d28d9;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  vertical-align: middle;
+  white-space: nowrap;
+}

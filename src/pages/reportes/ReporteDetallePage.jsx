@@ -284,6 +284,16 @@ function PanelEdicion({
   const [rAlm, setRAlm] = useState(d.restaurante?.almuerzo ?? false);
   const [rCena, setRCena] = useState(d.restaurante?.cena ?? false);
 
+  // Helper para normalizar LocalDate de Java (puede llegar como array o string)
+  const toIsoDate = (v) => {
+    if (!v) return null;
+    if (Array.isArray(v)) {
+      const [y, m, d] = v;
+      return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    }
+    return v;
+  };
+
   const handleGuardar = () => {
     const body = {};
     if (hotelRid) {
@@ -294,8 +304,9 @@ function PanelEdicion({
       body.hotelAlmuerzo = hAlm;
       body.hotelCena = hCena;
       body.hotelSnack = hSnack;
-      body.fechaIngreso = d.hotel?.fechaIngreso ?? null; // ← AGREGAR
-      body.fechaSalida = d.hotel?.fechaSalida ?? null; // ← AGREGAR
+      // Después:
+      body.fechaIngreso = toIsoDate(d.hotel?.fechaIngreso);
+      body.fechaSalida = toIsoDate(d.hotel?.fechaSalida);
     }
     if (transRid) {
       body.transporteVueloRecursoId = Number(transRid);
@@ -815,6 +826,23 @@ export default function ReporteDetallePage() {
                   {d.restaurante?.proveedorNombre ?? "—"}
                 </div>
               </div>
+              {/* ── Check-in / Check-out — visibles siempre ── */}
+              {d.hotel && (
+                <>
+                  <div className={styles.infoField}>
+                    <label>Check-in</label>
+                    <div className={styles.infoVal}>
+                      {d.hotel.fechaIngreso ?? "—"}
+                    </div>
+                  </div>
+                  <div className={styles.infoField}>
+                    <label>Check-out</label>
+                    <div className={styles.infoVal}>
+                      {d.hotel.fechaSalida ?? "—"}
+                    </div>
+                  </div>
+                </>
+              )}
             </>
           )}
 

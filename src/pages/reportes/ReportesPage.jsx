@@ -335,6 +335,24 @@ export default function ReportesPage() {
                   </td>
                   <td className={styles.td}>{a.generadoPor ?? "—"}</td>
                   <td className={styles.td}>
+                    {a.rolGenerador && (
+                      <span className={styles.rolBadge}>
+                        {a.rolGenerador === "ADMINISTRADOR"
+                          ? "Admin"
+                          : a.rolGenerador === "LIDER_SAASA"
+                            ? "Líder"
+                            : a.rolGenerador === "AGENTE_SAASA"
+                              ? "Agente"
+                              : a.rolGenerador === "LINEA_AEREA"
+                                ? "Línea Aérea"
+                                : a.rolGenerador === "PROVEEDOR"
+                                  ? "Proveedor"
+                                  : a.rolGenerador}
+                      </span>
+                    )}
+                  </td>
+                  {/* <td className={styles.td}>{a.generadoPor ?? "—"}</td> */}
+                  <td className={styles.td}>
                     {a.fechaVuelo?.slice(0, 10) ?? "—"}
                   </td>
                   <td className={styles.td}>{a.pasajero ?? "—"}</td>
