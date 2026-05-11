@@ -93,3 +93,21 @@ export function useDescargarActualizado() {
     mutationFn: (id) => reportesApi.descargarActualizado(id),
   });
 }
+
+/**
+ * Hook para obtener los KPIs y datos de gráficos del módulo de reportes.
+ * @param {Object} rango - { fechaDesde, fechaHasta } en formato "yyyy-MM-dd"
+ */
+export function useResumenReportes(rango) {
+  return useQuery({
+    queryKey: ["reportes-resumen", rango],
+    queryFn: async () => {
+      const params = {};
+      if (rango?.fechaDesde) params.fechaDesde = rango.fechaDesde;
+      if (rango?.fechaHasta) params.fechaHasta = rango.fechaHasta;
+      const { data } = await reportesApi.getResumen(params);
+      return data.data;
+    },
+    staleTime: 30_000, // 30 s de caché — datos de resumen cambian poco
+  });
+}

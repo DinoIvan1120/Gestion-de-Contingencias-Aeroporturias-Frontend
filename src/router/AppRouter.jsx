@@ -14,6 +14,8 @@ import AgentePDFPage from "../pages/agente/AgentePDFPage.jsx";
 
 import ReportesPage from "../pages/reportes/ReportesPage.jsx";
 
+import ResumenPage from "../pages/resumen/ResumenPage.jsx";
+
 import AdminDashboardPage from "../pages/admin/AdminDashboardPage.jsx";
 import AdminProveedoresPage from "../pages/admin/AdminProveedoresPage.jsx";
 import AdminUsuariosPage from "../pages/admin/AdminUsuariosPage.jsx";
@@ -126,6 +128,7 @@ export default function AppRouter() {
             <Route path="/admin/usuarios" element={<AdminUsuariosPage />} />
             <Route path="/admin/vuelos" element={<AdminVuelosPage />} />
             <Route path="/auditoria" element={<AuditoriaPage />} />
+            <Route path="/resumen" element={<ResumenPage />} />
           </Route>
         </Route>
       </Route>

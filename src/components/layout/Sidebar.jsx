@@ -7,6 +7,7 @@ import {
   ClipboardList,
   BarChart2,
   Settings,
+  TrendingUp,
   UserCog,
   FileText,
   Shield,
@@ -49,6 +50,7 @@ const NAV_BY_SECTION = {
       { to: "/admin/usuarios", icon: UserCog, label: "Usuarios" },
       { to: "/admin/vuelos", icon: Plane, label: "Carga de Vuelos" },
       { to: "/reportes", icon: BarChart2, label: "Reportes" },
+      { to: "/resumen", icon: TrendingUp, label: "Estadística" },
       { to: "/auditoria", icon: Shield, label: "Auditoría" },
     ],
   },
@@ -86,7 +88,9 @@ function resolveSection(pathname, rol) {
   // Si es admin y está en reportes o auditoría, mantener menú de admin
   if (
     rol === "ADMINISTRADOR" &&
-    (pathname.startsWith("/reportes") || pathname.startsWith("/auditoria"))
+    (pathname.startsWith("/reportes") ||
+      pathname.startsWith("/resumen") ||
+      pathname.startsWith("/auditoria"))
   ) {
     return NAV_BY_SECTION["/admin"];
   }

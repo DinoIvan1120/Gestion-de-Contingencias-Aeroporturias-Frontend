@@ -18,6 +18,7 @@ const reportesApi = {
   descargarActualizado: (
     id, // ← AGREGAR
   ) => axiosClient.post(`${BASE}/${id}/descargar-actualizado`),
+  getResumen: (params) => axiosClient.get(`${BASE}/resumen`, { params }),
 };
 
 export default reportesApi;
