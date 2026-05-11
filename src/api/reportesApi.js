@@ -11,7 +11,10 @@ const reportesApi = {
     axiosClient.get(`${BASE}/correlativo/${correlativo}`),
   actualizarServicios: (id, body) =>
     axiosClient.put(`${BASE}/${id}/servicios`, body),
-  regenerarPdf: (id) => axiosClient.post(`${BASE}/${id}/regenerar-pdf`),
+  // ✅ FIX: ahora recibe body { correoDestino, telefono } para enviar al correo
+  //    y WhatsApp indicados por el agente en el modal
+  regenerarPdf: (id, body) =>
+    axiosClient.post(`${BASE}/${id}/regenerar-pdf`, body),
   descargarActualizado: (
     id, // ← AGREGAR
   ) => axiosClient.post(`${BASE}/${id}/descargar-actualizado`),

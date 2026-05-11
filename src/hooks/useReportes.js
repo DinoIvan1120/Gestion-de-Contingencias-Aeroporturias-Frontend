@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import reportesApi from "../api/reportesApi";
-import atencionesApi from "../api/atencionesApi"; // ← AGREGAR
 
 export function useReportes(filtros, pageable) {
   return useQuery({
@@ -81,13 +80,14 @@ export function useActualizarServicios() {
 export const useRegenerarPdf = () =>
   useMutation({
     mutationFn: ({ id, correoDestino, telefono }) =>
-      atencionesApi.reenviarPdf(id, {
-        // ← CAMBIAR api.post por atencionesApi.reenviarPdf
+      // ✅ FIX: llama a POST /api/v1/reportes/{id}/regenerar-pdf
+      //    que regenera el PDF con servicios ACTUALES de BD y envía por email + WhatsApp
+      //    (antes llamaba a atencionesApi.reenviarPdf → endpoint incorrecto)
+      reportesApi.regenerarPdf(id, {
         correoDestino,
         telefono: telefono || null,
       }),
   });
-
 export function useDescargarActualizado() {
   return useMutation({
     mutationFn: (id) => reportesApi.descargarActualizado(id),
