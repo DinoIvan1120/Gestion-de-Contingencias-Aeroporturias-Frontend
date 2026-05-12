@@ -647,3 +647,297 @@
     padding: 0.75rem 1rem;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TABLA POR PROVEEDOR INDIVIDUAL
+   ═══════════════════════════════════════════════════════════════════════════ */
+.proveedorSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.proveedorSectionTitle {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-700);
+}
+
+.proveedorGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.875rem;
+}
+
+/* proveedorCard: solo wrapper de layout; todo el estilo visual viene de chartBlock */
+.proveedorCard {
+  min-width: 0;
+}
+
+/* Asegura que el chartBlock dentro de la card llene el alto de su celda */
+.proveedorCard .chartBlock {
+  height: 100%;
+}
+
+/* ─── Título compuesto: dot + label + total ─────────────────────────────── */
+/*
+  proveedorBlockTitle vive DENTRO de chartTitleWrap (que ya tiene flex:1 y min-width:0).
+  Por eso solo necesita width:100% + display:flex para distribuir sus hijos.
+*/
+.proveedorBlockTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.proveedorDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Label ocupa el espacio sobrante y se trunca si es muy largo */
+.proveedorCardTipo {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text-900);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Total siempre visible a la derecha, sin truncarse */
+.proveedorCardTotal {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-500);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ─── Tabla interna de proveedores ──────────────────────────────────────── */
+.proveedorTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  table-layout: fixed;
+}
+
+.proveedorTable th {
+  text-align: left;
+  color: var(--text-500);
+  font-weight: 600;
+  font-size: 0.72rem;
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.proveedorTable td {
+  padding: 6px 8px;
+  color: var(--text-900);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+
+.proveedorTable tr:last-child td {
+  border-bottom: none;
+}
+
+/* Anchos de columna — proveedor toma el espacio libre */
+.proveedorTable th:nth-child(1),
+.proveedorTable td:nth-child(1) {
+  width: auto;
+}
+.proveedorTable th:nth-child(2),
+.proveedorTable td:nth-child(2) {
+  width: 58px;
+  text-align: right;
+}
+.proveedorTable th:nth-child(3),
+.proveedorTable td:nth-child(3) {
+  width: 80px;
+  text-align: right;
+}
+.proveedorTable th:nth-child(4),
+.proveedorTable td:nth-child(4) {
+  width: 86px;
+}
+
+.proveedorNombre {
+  font-weight: 500;
+}
+
+/* Mini barra de porcentaje */
+.pctBar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  color: var(--text-500);
+}
+
+.pctFill {
+  height: 5px;
+  border-radius: 99px;
+  min-width: 2px;
+  opacity: 0.75;
+  flex-shrink: 0;
+  max-width: 36px;
+}
+
+/* Fila de totales */
+.proveedorFooter td {
+  font-weight: 700;
+  color: var(--text-700);
+  background: var(--bg-card);
+  border-top: 1px solid var(--border);
+  border-bottom: none !important;
+  padding: 5px 8px;
+  font-size: 0.78rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 960px) {
+  .chartsRow {
+    grid-template-columns: 1fr;
+  }
+  .donutWrap {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 1.25rem;
+  }
+  .svgDonut {
+    width: 140px;
+    height: 140px;
+    flex-shrink: 0;
+  }
+  .legend {
+    flex: 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .panelBody {
+    padding: 0 0.875rem 0.875rem;
+  }
+
+  /* Fechas */
+  .rangoBar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.625rem;
+  }
+  .rangoInputRow {
+    width: 100%;
+  }
+  .rangoField {
+    flex: 1;
+  }
+  .applyBtn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* KPIs */
+  .kpiRow {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.625rem;
+  }
+  .kpiCard:nth-child(3) {
+    grid-column: 1 / -1;
+  }
+  .kpiCard {
+    padding: 0.75rem 0.875rem;
+    gap: 0.625rem;
+  }
+  .kpiValue {
+    font-size: 1rem;
+  }
+
+  /* Donut */
+  .donutWrap {
+    flex-direction: column;
+    align-items: center;
+  }
+  .svgDonut {
+    width: 150px;
+    height: 150px;
+  }
+
+  /* Tabla tipo */
+  .tipoTable {
+    font-size: 0.75rem;
+  }
+  .tipoTable th:nth-child(2),
+  .tipoTable td:nth-child(2) {
+    width: 70px;
+  }
+  .tipoTable th:nth-child(3),
+  .tipoTable td:nth-child(3) {
+    width: 80px;
+  }
+
+  /* Proveedores: 1 columna en móvil */
+  .proveedorGrid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Columnas de tabla más ajustadas en móvil */
+  .proveedorTable th:nth-child(2),
+  .proveedorTable td:nth-child(2) {
+    width: 52px;
+  }
+  .proveedorTable th:nth-child(3),
+  .proveedorTable td:nth-child(3) {
+    width: 74px;
+  }
+  .proveedorTable th:nth-child(4),
+  .proveedorTable td:nth-child(4) {
+    width: 78px;
+  }
+
+  /* Modal */
+  .modalContent {
+    max-height: 95vh;
+    border-radius: var(--r-md);
+  }
+  .modalBody {
+    padding: 1rem;
+  }
+  .modalBody .donutWrap {
+    flex-direction: column;
+    align-items: center;
+  }
+  .modalBody .proveedorTable {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .kpiRow {
+    grid-template-columns: 1fr;
+  }
+  .kpiCard:nth-child(3) {
+    grid-column: auto;
+  }
+  .panelHeader {
+    padding: 0.75rem 1rem;
+  }
+
+  /* En pantallas muy pequeñas, ocultar la mini-barra y mostrar solo el % */
+  .pctFill {
+    display: none;
+  }
+}

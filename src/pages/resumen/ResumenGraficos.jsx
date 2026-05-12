@@ -449,6 +449,107 @@ function DonutChart({ data }) {
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
+// Tabla de estadística por proveedor individual
+// ═════════════════════════════════════════════════════════════════════════════
+function TablaProveedores({ data }) {
+  const grupos = Object.entries(
+    data.reduce((acc, row) => {
+      const tipo = row.tipo ?? "OTRO";
+      if (!acc[tipo]) acc[tipo] = [];
+      acc[tipo].push(row);
+      return acc;
+    }, {}),
+  );
+
+  return (
+    <div className={styles.proveedorSection}>
+      <p className={styles.proveedorSectionTitle}>
+        Estadística por proveedor individual
+      </p>
+      <div className={styles.proveedorGrid}>
+        {grupos.map(([tipo, rows]) => {
+          const cfg = TIPO_CONFIG[tipo] ?? { label: tipo, color: "#94A3B8" };
+          const totalImporte = rows.reduce((s, r) => s + Number(r.importe), 0);
+          const totalCantidad = rows.reduce(
+            (s, r) => s + Number(r.cantidad),
+            0,
+          );
+
+          const blockTitle = (
+            <span className={styles.proveedorBlockTitle}>
+              <span
+                className={styles.proveedorDot}
+                style={{ background: cfg.color }}
+              />
+              <span className={styles.proveedorCardTipo}>{cfg.label}</span>
+              <span className={styles.proveedorCardTotal}>
+                {formatearMonto(totalImporte)}
+              </span>
+            </span>
+          );
+
+          return (
+            <div key={tipo} className={styles.proveedorCard}>
+              <ExpandableChartBlock title={blockTitle}>
+                <table className={styles.proveedorTable}>
+                  <thead>
+                    <tr>
+                      <th>Proveedor</th>
+                      <th>Atenc.</th>
+                      <th>Importe</th>
+                      <th>%</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((r) => {
+                      const pct =
+                        totalImporte > 0
+                          ? ((Number(r.importe) / totalImporte) * 100).toFixed(
+                              1,
+                            )
+                          : "0.0";
+                      return (
+                        <tr key={r.proveedorNombre}>
+                          <td className={styles.proveedorNombre}>
+                            {r.proveedorNombre}
+                          </td>
+                          <td>{r.cantidad}</td>
+                          <td>{formatearMonto(r.importe)}</td>
+                          <td>
+                            <div className={styles.pctBar}>
+                              <div
+                                className={styles.pctFill}
+                                style={{
+                                  width: `${pct}%`,
+                                  background: cfg.color,
+                                }}
+                              />
+                              <span>{pct}%</span>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                  <tfoot>
+                    <tr className={styles.proveedorFooter}>
+                      <td>Total</td>
+                      <td>{totalCantidad}</td>
+                      <td>{formatearMonto(totalImporte)}</td>
+                      <td>100%</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </ExpandableChartBlock>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
 // Componente principal — ResumenGraficos
 // ═════════════════════════════════════════════════════════════════════════════
 export default function ResumenGraficos() {
@@ -605,6 +706,10 @@ export default function ResumenGraficos() {
                   </ExpandableChartBlock>
                 </div>
               </div>
+              {/* ── Tabla por proveedor individual ────────────────────────── */}
+              {resumen.distribucionPorProveedor?.length > 0 && (
+                <TablaProveedores data={resumen.distribucionPorProveedor} />
+              )}
             </>
           )}
         </div>

@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useAuth } from "../../context/AuthContext";
 import {
   BarChart2,
   Download,
-  Eye,
   ChevronLeft,
   ChevronRight,
   SlidersHorizontal,
-  X,
+  Info,
 } from "lucide-react";
 import { useReportes, useExportarExcel } from "../../hooks/useReportes";
 import { useNavigate } from "react-router-dom";
@@ -33,6 +33,8 @@ const EMPTY_FILTROS = {
 };
 
 export default function ReportesPage() {
+  const { rol } = useAuth();
+  const esProveedor = rol === "PROVEEDOR";
   const [filtros, setFiltros] = useState(EMPTY_FILTROS);
   const [filtrosActivos, setFiltrosActivos] = useState(EMPTY_FILTROS);
   const [filtrosOpen, setFiltrosOpen] = useState(false); // cerrado al entrar
@@ -53,6 +55,27 @@ export default function ReportesPage() {
   const atenciones = pageData?.content ?? [];
   const totalPages = pageData?.totalPages ?? 0;
   const totalElements = pageData?.totalElements ?? 0;
+
+  // Detectar tipo de proveedor desde los propios datos (sin campo extra en backend)
+  const tipoProveedor = useMemo(() => {
+    if (!esProveedor || atenciones.length === 0) return null;
+    const a = atenciones.find(
+      (x) =>
+        (x.hotelTotal ?? 0) > 0 ||
+        (x.transporteTotal ?? 0) > 0 ||
+        (x.restauranteTotal ?? 0) > 0,
+    );
+    if (!a) return null;
+    if ((a.hotelTotal ?? 0) > 0) return "HOTEL";
+    if ((a.transporteTotal ?? 0) > 0) return "TRANSPORTE";
+    if ((a.restauranteTotal ?? 0) > 0) return "RESTAURANTE";
+    return null;
+  }, [esProveedor, atenciones]);
+
+  // Visibilidad de columnas por tipo de servicio
+  const mostrarHotel = !esProveedor || tipoProveedor === "HOTEL";
+  const mostrarTransporte = !esProveedor || tipoProveedor === "TRANSPORTE";
+  const mostrarRestaurante = !esProveedor || tipoProveedor === "RESTAURANTE";
 
   const { data: vuelosPage } = useVuelos({ page: 0, size: 100 });
   const vuelos = vuelosPage?.content ?? [];
@@ -115,7 +138,11 @@ export default function ReportesPage() {
       <div className={styles.pageHeader}>
         <BarChart2 size={24} color="var(--primary)" />
         <div>
-          <h1 className={styles.title}>Reportes de Atenciones</h1>
+          <h1 className={styles.title}>
+            {esProveedor
+              ? "Mis Servicios Registrados"
+              : "Reportes de Atenciones"}
+          </h1>
           <p className={styles.sub}>
             {totalElements} registro{totalElements !== 1 ? "s" : ""} encontrado
             {totalElements !== 1 ? "s" : ""}
@@ -137,16 +164,30 @@ export default function ReportesPage() {
               <span className={styles.filterBadge}>{filtrosActivosCount}</span>
             )}
           </button>
-          <Button
-            onClick={handleExportar}
-            loading={exportar.isPending}
-            variant="ghost"
-            size="sm"
-          >
-            <Download size={16} /> Exportar Excel
-          </Button>
+          {/* Exportar Excel: solo para roles internos */}
+          {!esProveedor && (
+            <Button
+              onClick={handleExportar}
+              loading={exportar.isPending}
+              variant="ghost"
+              size="sm"
+            >
+              <Download size={16} /> Exportar Excel
+            </Button>
+          )}
         </div>
       </div>
+
+      {/* Banner informativo para proveedor */}
+      {esProveedor && (
+        <div className={styles.proveedorBanner}>
+          <Info size={16} />
+          <span>
+            Solo estás viendo los registros correspondientes a tus servicios.
+            Los datos de otros proveedores no son visibles.
+          </span>
+        </div>
+      )}
 
       {/* Filtros */}
       <div
@@ -198,54 +239,61 @@ export default function ReportesPage() {
               ))}
             </select>
           </div>
-          <div className={styles.filtroField}>
-            <label className={styles.filtroLabel}>Hotel</label>
-            <select
-              name="hotelId"
-              value={filtros.hotelId}
-              onChange={handleFiltroChange}
-              className={styles.filtroSelect}
-            >
-              <option value="">Todos</option>
-              {hoteles.map((h) => (
-                <option key={h.id} value={h.id}>
-                  {h.nombre}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className={styles.filtroField}>
-            <label className={styles.filtroLabel}>Transporte</label>
-            <select
-              name="transporteId"
-              value={filtros.transporteId}
-              onChange={handleFiltroChange}
-              className={styles.filtroSelect}
-            >
-              <option value="">Todos</option>
-              {transportes.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.nombre}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className={styles.filtroField}>
-            <label className={styles.filtroLabel}>Restaurante</label>
-            <select
-              name="restauranteId"
-              value={filtros.restauranteId}
-              onChange={handleFiltroChange}
-              className={styles.filtroSelect}
-            >
-              <option value="">Todos</option>
-              {restaurantes.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.nombre}
-                </option>
-              ))}
-            </select>
-          </div>
+
+          {/* Filtros Hotel/Transporte/Restaurante: ocultos para proveedor */}
+          {!esProveedor && (
+            <>
+              <div className={styles.filtroField}>
+                <label className={styles.filtroLabel}>Hotel</label>
+                <select
+                  name="hotelId"
+                  value={filtros.hotelId}
+                  onChange={handleFiltroChange}
+                  className={styles.filtroSelect}
+                >
+                  <option value="">Todos</option>
+                  {hoteles.map((h) => (
+                    <option key={h.id} value={h.id}>
+                      {h.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className={styles.filtroField}>
+                <label className={styles.filtroLabel}>Transporte</label>
+                <select
+                  name="transporteId"
+                  value={filtros.transporteId}
+                  onChange={handleFiltroChange}
+                  className={styles.filtroSelect}
+                >
+                  <option value="">Todos</option>
+                  {transportes.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className={styles.filtroField}>
+                <label className={styles.filtroLabel}>Restaurante</label>
+                <select
+                  name="restauranteId"
+                  value={filtros.restauranteId}
+                  onChange={handleFiltroChange}
+                  className={styles.filtroSelect}
+                >
+                  <option value="">Todos</option>
+                  {restaurantes.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
+
           <div className={styles.filtroField}>
             <label className={styles.filtroLabel}>Fecha desde</label>
             <input
@@ -289,31 +337,35 @@ export default function ReportesPage() {
           <table className={styles.table}>
             <thead>
               <tr>
-                {[
-                  "#",
-                  "Correlativo",
-                  "PNR",
-                  "F. Creación",
-                  "F. Actualización",
-                  "Generado por",
-                  "Rol",
-                  "Fecha Vuelo",
-                  "Pasajero",
-                  "Vuelo",
-                  "Hotel",
-                  "Hotel S/",
-                  "Transporte",
-                  "Transporte S/",
-                  "Restaurante",
-                  "Restaurante S/",
-                  "TOTAL S/",
-                  "Estado",
-                  "Acciones",
-                ].map((h) => (
-                  <th key={h} className={styles.th}>
-                    {h}
-                  </th>
-                ))}
+                <th className={styles.th}>#</th>
+                <th className={styles.th}>Correlativo</th>
+                <th className={styles.th}>PNR</th>
+                <th className={styles.th}>F. Creación</th>
+                {!esProveedor && (
+                  <th className={styles.th}>F. Actualización</th>
+                )}
+                {!esProveedor && <th className={styles.th}>Generado por</th>}
+                {!esProveedor && <th className={styles.th}>Rol</th>}
+                <th className={styles.th}>Fecha Vuelo</th>
+                <th className={styles.th}>Pasajero</th>
+                <th className={styles.th}>Vuelo</th>
+                {mostrarHotel && <th className={styles.th}>Hotel</th>}
+                {mostrarHotel && <th className={styles.th}>Hotel S/</th>}
+                {mostrarTransporte && <th className={styles.th}>Transporte</th>}
+                {mostrarTransporte && (
+                  <th className={styles.th}>Transporte S/</th>
+                )}
+                {mostrarRestaurante && (
+                  <th className={styles.th}>Restaurante</th>
+                )}
+                {mostrarRestaurante && (
+                  <th className={styles.th}>Restaurante S/</th>
+                )}
+                <th className={styles.th}>
+                  {esProveedor ? "TOTAL MIS SERVICIOS S/" : "TOTAL S/"}
+                </th>
+                <th className={styles.th}>Estado</th>
+                {!esProveedor && <th className={styles.th}>Acciones</th>}
               </tr>
             </thead>
             <tbody>
@@ -331,45 +383,70 @@ export default function ReportesPage() {
                   <td className={styles.td}>
                     {a.createdAt ? formatearFecha(a.createdAt) : "—"}
                   </td>
-                  <td className={styles.td}>
-                    {a.updatedAt ? formatearFecha(a.updatedAt) : "—"}
-                  </td>
-                  <td className={styles.td}>{a.generadoPor ?? "—"}</td>
-                  <td className={styles.td}>
-                    {a.rolGenerador && (
-                      <span className={styles.rolBadge}>
-                        {a.rolGenerador === "ADMINISTRADOR"
-                          ? "Admin"
-                          : a.rolGenerador === "LIDER_SAASA"
-                            ? "Líder"
-                            : a.rolGenerador === "AGENTE_SAASA"
-                              ? "Agente"
-                              : a.rolGenerador === "LINEA_AEREA"
-                                ? "Línea Aérea"
-                                : a.rolGenerador === "PROVEEDOR"
-                                  ? "Proveedor"
-                                  : a.rolGenerador}
-                      </span>
-                    )}
-                  </td>
-                  {/* <td className={styles.td}>{a.generadoPor ?? "—"}</td> */}
+                  {!esProveedor && (
+                    <td className={styles.td}>
+                      {a.updatedAt ? formatearFecha(a.updatedAt) : "—"}
+                    </td>
+                  )}
+                  {!esProveedor && (
+                    <td className={styles.td}>{a.generadoPor ?? "—"}</td>
+                  )}
+                  {!esProveedor && (
+                    <td className={styles.td}>
+                      {a.rolGenerador && (
+                        <span className={styles.rolBadge}>
+                          {a.rolGenerador === "ADMINISTRADOR"
+                            ? "Admin"
+                            : a.rolGenerador === "LIDER_SAASA"
+                              ? "Líder"
+                              : a.rolGenerador === "AGENTE_SAASA"
+                                ? "Agente"
+                                : a.rolGenerador === "LINEA_AEREA"
+                                  ? "Línea Aérea"
+                                  : a.rolGenerador === "PROVEEDOR"
+                                    ? "Proveedor"
+                                    : a.rolGenerador}
+                        </span>
+                      )}
+                    </td>
+                  )}
                   <td className={styles.td}>
                     {a.fechaVuelo?.slice(0, 10) ?? "—"}
                   </td>
                   <td className={styles.td}>{a.pasajero ?? "—"}</td>
                   <td className={styles.td}>{a.vuelo ?? "—"}</td>
-                  <td className={styles.td}>{a.hotel ?? "—"}</td>
-                  <td className={styles.td}>{formatearMonto(a.hotelTotal)}</td>
-                  <td className={styles.td}>{a.transporte ?? "—"}</td>
+                  {mostrarHotel && (
+                    <td className={styles.td}>{a.hotel ?? "—"}</td>
+                  )}
+                  {mostrarHotel && (
+                    <td className={styles.td}>
+                      {formatearMonto(a.hotelTotal)}
+                    </td>
+                  )}
+                  {mostrarTransporte && (
+                    <td className={styles.td}>{a.transporte ?? "—"}</td>
+                  )}
+                  {mostrarTransporte && (
+                    <td className={styles.td}>
+                      {formatearMonto(a.transporteTotal)}
+                    </td>
+                  )}
+                  {mostrarRestaurante && (
+                    <td className={styles.td}>{a.restaurante ?? "—"}</td>
+                  )}
+                  {mostrarRestaurante && (
+                    <td className={styles.td}>
+                      {formatearMonto(a.restauranteTotal)}
+                    </td>
+                  )}
                   <td className={styles.td}>
-                    {formatearMonto(a.transporteTotal)}
-                  </td>
-                  <td className={styles.td}>{a.restaurante ?? "—"}</td>
-                  <td className={styles.td}>
-                    {formatearMonto(a.restauranteTotal)}
-                  </td>
-                  <td className={styles.td}>
-                    <strong>{formatearMonto(a.total)}</strong>
+                    <strong
+                      className={
+                        esProveedor ? styles.totalProveedor : undefined
+                      }
+                    >
+                      {formatearMonto(a.total)}
+                    </strong>
                   </td>
                   <td className={styles.td}>
                     <Badge
@@ -377,18 +454,19 @@ export default function ReportesPage() {
                       variant={a.estado === "ANULADO" ? "danger" : "success"}
                     />
                   </td>
-                  <td className={styles.td}>
-                    <button
-                      className={styles.detailBtn}
-                      onClick={() =>
-                        // navigate(`/reportes/detalle/${a.atencionId ?? i + 1}`)
-                        navigate(`/reportes/detalle/${a.correlativo}`)
-                      }
-                      aria-label="Ver detalle"
-                    >
-                      detalle
-                    </button>
-                  </td>
+                  {!esProveedor && (
+                    <td className={styles.td}>
+                      <button
+                        className={styles.detailBtn}
+                        onClick={() =>
+                          navigate(`/reportes/detalle/${a.correlativo}`)
+                        }
+                        aria-label="Ver detalle"
+                      >
+                        detalle
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

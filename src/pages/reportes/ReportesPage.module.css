@@ -318,3 +318,21 @@
   vertical-align: middle;
   white-space: nowrap;
 }
+
+/* AGREGADO al final: */
+.proveedorBanner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1rem;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  color: #1d4ed8;
+  font-size: 0.85rem;
+}
+
+.totalProveedor {
+  color: var(--primary, #7c3aed);
+  font-weight: 700;
+}

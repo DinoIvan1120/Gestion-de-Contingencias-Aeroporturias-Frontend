@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import {
   ArrowLeft,
   Edit2,
@@ -657,6 +658,7 @@ function PanelEdicion({ d, recursos, disp, onGuardar, onCancelar, saving }) {
 export default function ReporteDetallePage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { rol } = useAuth();
 
   const { data: d, isLoading, error } = useReporteDetalle(id);
   const actualizar = useActualizarServicios();
@@ -693,6 +695,11 @@ export default function ReporteDetallePage() {
     correo: "",
     telefono: "",
   });
+
+  if (rol === "PROVEEDOR") {
+    // ← nueva
+    return <Navigate to="/reportes" replace />; // ← nueva
+  }
 
   // Dentro del componente, junto a los otros hooks:
   const descargar = useObtenerUrlDescarga();
