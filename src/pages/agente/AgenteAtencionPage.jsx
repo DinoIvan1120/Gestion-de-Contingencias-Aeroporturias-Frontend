@@ -758,8 +758,15 @@ function FormularioAtencion({ registro, onVolver }) {
 
           showModal(
             "success",
-            "Boarding pass leído",
-            `${bp.nombreCompleto} · PNR: ${bp.pnr}`,
+            bp.nombreTruncado
+              ? "Boarding pass leído (nombre incompleto)"
+              : "Boarding pass leído",
+            bp.nombreTruncado
+              ? `${bp.nombreCompleto} · PNR: ${bp.pnr}\n\n⚠️ El código de barras IATA limita el nombre a 20 caracteres. El nombre del pasajero parece estar cortado; complétalo manualmente.`
+              : `${bp.nombreCompleto} · PNR: ${bp.pnr}`,
+            // "success",
+            // "Boarding pass leído",
+            // `${bp.nombreCompleto} · PNR: ${bp.pnr}`,
           );
         } catch (err) {
           showModal(
@@ -833,8 +840,15 @@ function FormularioAtencion({ registro, onVolver }) {
 
       showModal(
         "success",
-        "Boarding pass leído",
-        `${bp.nombreCompleto} · PNR: ${bp.pnr}`,
+        bp.nombreTruncado
+          ? "Boarding pass leído (nombre incompleto)"
+          : "Boarding pass leído",
+        bp.nombreTruncado
+          ? `${bp.nombreCompleto} · PNR: ${bp.pnr}\n\n⚠️ El código de barras IATA limita el nombre a 20 caracteres. El nombre del pasajero parece estar cortado; complétalo manualmente.`
+          : `${bp.nombreCompleto} · PNR: ${bp.pnr}`,
+        // "success",
+        // "Boarding pass leído",
+        // `${bp.nombreCompleto} · PNR: ${bp.pnr}`,
       );
     } catch (err) {
       showModal(
@@ -1561,9 +1575,23 @@ function FormularioAtencion({ registro, onVolver }) {
                     }
                     placeholder="PÉREZ/JUAN CARLOS"
                     onChange={(e) => {
-                      const parts = e.target.value.split("/");
-                      setPx("apellido", parts[0]?.trim().toUpperCase() ?? "");
-                      setPx("nombre", parts[1]?.trim().toUpperCase() ?? "");
+                      const raw = e.target.value;
+                      const parts = raw.split("/");
+                      setPx("apellido", parts[0] ?? "");
+                      setPx(
+                        "nombre",
+                        parts.length > 1 ? parts.slice(1).join("/") : "",
+                      );
+                      // const parts = e.target.value.split("/");
+                      // setPx("apellido", parts[0]?.trim().toUpperCase() ?? "");
+                      // setPx("nombre", parts[1]?.trim().toUpperCase() ?? "");
+                    }}
+                    onBlur={() => {
+                      setPx(
+                        "apellido",
+                        (px.apellido ?? "").trim().toUpperCase(),
+                      );
+                      setPx("nombre", (px.nombre ?? "").trim().toUpperCase());
                     }}
                   />
                 </div>
@@ -1709,9 +1737,17 @@ function FormularioAtencion({ registro, onVolver }) {
                   }
                   placeholder="Nombre del pasajero"
                   onChange={(e) => {
-                    const p = e.target.value.split("/");
-                    setPx("apellido", p[0]?.trim().toUpperCase() ?? "");
-                    setPx("nombre", p[1]?.trim().toUpperCase() ?? "");
+                    const raw = e.target.value;
+                    const p = raw.split("/");
+                    setPx("apellido", p[0] ?? "");
+                    setPx("nombre", p.length > 1 ? p.slice(1).join("/") : "");
+                    // const p = e.target.value.split("/");
+                    // setPx("apellido", p[0]?.trim().toUpperCase() ?? "");
+                    // setPx("nombre", p[1]?.trim().toUpperCase() ?? "");
+                  }}
+                  onBlur={() => {
+                    setPx("apellido", (px.apellido ?? "").trim().toUpperCase());
+                    setPx("nombre", (px.nombre ?? "").trim().toUpperCase());
                   }}
                 />
               </div>
