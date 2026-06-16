@@ -2,7 +2,7 @@
 
 Sistema de Gestión de Contingencias Aeroportuarias para **Plus Ultra Airlines**.
 
-**Stack:** React 19 · Vite · React Router v7 · TanStack React Query v5 · Axios · CSS Modules · Lucide React · STOMP WebSocket
+**Stack:** React 19 · Vite · React Router v7 · TanStack React Query v5 · Axios · CSS Modules · Lucide React · STOMP WebSocket - ultra mejora
 
 ---
 
@@ -23,15 +23,15 @@ npm install
 
 ## Comandos por entorno
 
-| Comando | Entorno | URL backend |
-|---|---|---|
-| `npm run dev` | Desarrollo | http://localhost:8080 |
-| `npm run dev:qa` | QA | https://api-qa.saasa.plusultra.com |
-| `npm run dev:prd` | Producción | https://api.saasa.plusultra.com |
-| `npm run build` | Build producción | https://api.saasa.plusultra.com |
-| `npm run build:dev` | Build desarrollo | http://localhost:8080 |
-| `npm run build:qa` | Build QA | https://api-qa.saasa.plusultra.com |
-| `npm run preview` | Preview del build | — |
+| Comando             | Entorno           | URL backend                        |
+| ------------------- | ----------------- | ---------------------------------- |
+| `npm run dev`       | Desarrollo        | http://localhost:8080              |
+| `npm run dev:qa`    | QA                | https://api-qa.saasa.plusultra.com |
+| `npm run dev:prd`   | Producción        | https://api.saasa.plusultra.com    |
+| `npm run build`     | Build producción  | https://api.saasa.plusultra.com    |
+| `npm run build:dev` | Build desarrollo  | http://localhost:8080              |
+| `npm run build:qa`  | Build QA          | https://api-qa.saasa.plusultra.com |
+| `npm run preview`   | Preview del build | —                                  |
 
 ---
 
@@ -43,13 +43,13 @@ Copia `.env.example` como `.env.dev` y ajusta los valores:
 cp .env.example .env.dev
 ```
 
-| Variable | Descripción |
-|---|---|
-| `VITE_API_BASE_URL` | URL base del backend REST |
-| `VITE_WS_URL` | URL del WebSocket STOMP |
-| `VITE_APP_NAME` | Nombre de la aplicación |
-| `VITE_ENV_LABEL` | Etiqueta de entorno visible en el topbar (DEV/QA) |
-| `VITE_QUERY_STALE_TIME` | Tiempo de stale para React Query (ms) |
+| Variable                | Descripción                                       |
+| ----------------------- | ------------------------------------------------- |
+| `VITE_API_BASE_URL`     | URL base del backend REST                         |
+| `VITE_WS_URL`           | URL del WebSocket STOMP                           |
+| `VITE_APP_NAME`         | Nombre de la aplicación                           |
+| `VITE_ENV_LABEL`        | Etiqueta de entorno visible en el topbar (DEV/QA) |
+| `VITE_QUERY_STALE_TIME` | Tiempo de stale para React Query (ms)             |
 
 ---
 
@@ -77,13 +77,13 @@ src/
 
 ## Roles y pantallas
 
-| Rol | Pantallas |
-|---|---|
+| Rol             | Pantallas                                                                       |
+| --------------- | ------------------------------------------------------------------------------- |
 | `ADMINISTRADOR` | Dashboard, Proveedores, Usuarios, Vuelos, Reportes, Auditoría + todas las demás |
-| `LIDER_SAASA` | Registro de Vuelo, Habilitar Recursos |
-| `AGENTE_SAASA` | Atención al Pasajero, Generar PDF / Email |
-| `LINEA_AEREA` | Reportes |
-| `PROVEEDOR` | Reportes |
+| `LIDER_SAASA`   | Registro de Vuelo, Habilitar Recursos                                           |
+| `AGENTE_SAASA`  | Atención al Pasajero, Generar PDF / Email                                       |
+| `LINEA_AEREA`   | Reportes                                                                        |
+| `PROVEEDOR`     | Reportes                                                                        |
 
 ---
 

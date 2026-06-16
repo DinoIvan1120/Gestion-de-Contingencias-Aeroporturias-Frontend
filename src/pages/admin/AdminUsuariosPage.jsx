@@ -11,7 +11,7 @@ import {
   X,
   Plane,
   Building2,
-  BadgeCheck, // ← FIX #1: imports faltaban → crash al montar
+  BadgeCheck,
 } from "lucide-react";
 import {
   useBuscarUsuarios,
@@ -203,7 +203,8 @@ export default function AdminUsuariosPage() {
     const e = {};
     if (!form.nombre) e.nombre = "Requerido";
     if (!form.apellido) e.apellido = "Requerido";
-    if (!form.correo) e.correo = "Requerido";
+    // if (!form.correo) e.correo = "Requerido";
+    if (!form.correo && form.rol !== "AGENTE_SAASA") e.correo = "Requerido";
     if (!form.documento) e.documento = "Requerido";
     //if (!form.codigoEmpleado) e.codigoEmpleado = "Requerido";
 
@@ -226,6 +227,11 @@ export default function AdminUsuariosPage() {
     try {
       const payload = { ...form };
       if (!payload.password) delete payload.password;
+      // ✅ Para AGENTE_SAASA: si correo está vacío, enviarlo como null
+      // Para otros roles: el correo es obligatorio (validate() ya lo garantiza)
+      if (payload.rol === "AGENTE_SAASA" && !payload.correo?.trim()) {
+        payload.correo = null;
+      }
       if (editId) {
         await actualizar.mutateAsync({ id: editId, ...payload });
         showModal(
@@ -552,7 +558,7 @@ export default function AdminUsuariosPage() {
             />
           </div>
 
-          <Input
+          {/* <Input
             label="Correo electrónico"
             name="correo"
             type="email"
@@ -561,6 +567,24 @@ export default function AdminUsuariosPage() {
             error={errors.correo}
             placeholder="usuario@saasa.com"
             required
+          /> */}
+          <Input
+            label={
+              form.rol === "AGENTE_SAASA"
+                ? "Correo electrónico (opcional)"
+                : "Correo electrónico"
+            }
+            name="correo"
+            type="email"
+            value={form.correo}
+            onChange={handleFormChange}
+            error={errors.correo}
+            placeholder={
+              form.rol === "AGENTE_SAASA"
+                ? "Sin correo — login por DNI"
+                : "usuario@saasa.com"
+            }
+            required={form.rol !== "AGENTE_SAASA"}
           />
 
           <div className={styles.formGrid}>

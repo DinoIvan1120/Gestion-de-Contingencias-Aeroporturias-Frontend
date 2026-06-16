@@ -18,7 +18,7 @@ import {
   Search,
   Check,
 } from "lucide-react";
-import { useVuelos, useActualizarVuelo } from "../../hooks/useVuelos";
+import { useItinerarioHoy, useActualizarVuelo } from "../../hooks/useVuelos";
 import { useProveedores } from "../../hooks/useProveedores";
 import {
   useRegistrosHoy,
@@ -26,7 +26,9 @@ import {
   useRegistrarVueloDiario,
   useActualizarRegistro,
   useEliminarRegistro,
+  useCapacidadComprometidaHoy,
 } from "../../hooks/useRegistrosDiarios";
+import { hoyEnLima } from "../../utils/dateUtils.js";
 import { TIPOS_CONTINGENCIA } from "../../utils/constants";
 import { formatearMonto } from "../../utils/formatters";
 import InfoModal from "../../components/ui/InfoModal.jsx";
@@ -49,7 +51,6 @@ const BADGE_COLORS = {
   REPROGRAMADO: "#7c3aed",
   PROGRAMADO: "#2563eb",
 };
-const HOY = new Date().toISOString().slice(0, 10);
 
 /* ── CAMBIO 1: plantillas vacías por tipo ── */
 const EMPTY_HOTEL = { hotelId: "", simples: 0, dobles: 0, matrimoniales: 0 };
@@ -295,6 +296,7 @@ function ProveedorCombobox({
   placeholder,
   icon: Icon,
   accentColor,
+  comprometidoHoy = new Map(), // ← agregar esto
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -458,6 +460,18 @@ function ProveedorCombobox({
                     <span className={styles.proveedorOptNombre}>
                       {o.nombre}
                     </span>
+                    {/* Tag de cuanto ya esta comprometido hoy para esta opcion */}
+                    {(() => {
+                      const comp = comprometidoHoy.get(Number(o.id));
+                      if (!comp) return null;
+                      const txt =
+                        comp.proveedorTipo === "HOTEL"
+                          ? `${comp.simplesComprometidos ?? 0}S · ${comp.doblesComprometidos ?? 0}D · ${comp.matrimonialesComprometidos ?? 0}M hoy`
+                          : `${comp.capacidadTotalComprometida ?? 0} hoy`;
+                      return (
+                        <span className={styles.comprometidoOptTag}>{txt}</span>
+                      );
+                    })()}
                     {isSel && (
                       <Check size={13} className={styles.comboboxCheck} />
                     )}
@@ -538,56 +552,6 @@ function recFromRegistro(r) {
     restaurantes: restaurantes.length ? restaurantes : [{ ...EMPTY_REST }],
   };
 }
-
-// const EMPTY_REC = {
-//   hotelId: "",
-//   simples: 0,
-//   dobles: 0,
-//   matrimoniales: 0,
-//   transporteId: "",
-//   transCapacidad: 0,
-//   restauranteId: "",
-//   restCapacidad: 0,
-// };
-
-// function buildRecursos(rec) {
-//   const list = [];
-//   if (rec.hotelId)
-//     list.push({
-//       proveedorId: Number(rec.hotelId),
-//       habitacionesSimples: Number(rec.simples) || 0,
-//       habitacionesDobles: Number(rec.dobles) || 0,
-//       habitacionesMatrimoniales: Number(rec.matrimoniales) || 0,
-//     });
-//   if (rec.transporteId)
-//     list.push({
-//       proveedorId: Number(rec.transporteId),
-//       capacidadTotal: Number(rec.transCapacidad) || 0,
-//     });
-//   if (rec.restauranteId)
-//     list.push({
-//       proveedorId: Number(rec.restauranteId),
-//       capacidadTotal: Number(rec.restCapacidad) || 0,
-//     });
-//   return list;
-// }
-
-// function recFromRegistro(r) {
-//   if (!r?.recursos?.length) return EMPTY_REC;
-//   const hotel = r.recursos.find((x) => x.proveedorTipo === "HOTEL");
-//   const trans = r.recursos.find((x) => x.proveedorTipo === "TRANSPORTE");
-//   const rest = r.recursos.find((x) => x.proveedorTipo === "RESTAURANTE");
-//   return {
-//     hotelId: hotel ? String(hotel.proveedorId) : "",
-//     simples: hotel?.habitacionesSimples ?? 0,
-//     dobles: hotel?.habitacionesDobles ?? 0,
-//     matrimoniales: hotel?.habitacionesMatrimoniales ?? 0,
-//     transporteId: trans ? String(trans.proveedorId) : "",
-//     transCapacidad: trans?.capacidadTotal ?? 0,
-//     restauranteId: rest ? String(rest.proveedorId) : "",
-//     restCapacidad: rest?.capacidadTotal ?? 0,
-//   };
-// }
 
 const CONTINGENCIA_OPTIONS = [
   { value: "PROGRAMADO", color: "#2563eb", label: "Programado" },
@@ -856,7 +820,7 @@ function EditarVueloModal({ open, vuelo, onClose, onGuardado, onSuccess }) {
 }
 
 /* ── Sub-componente: Card de un registro diario ── */
-function RegistroCard({ r, onEditar, onEliminar }) {
+function RegistroCard({ r, onEditar, onEliminar, hoy: HOY }) {
   const v = r.vueloItinerario;
   const hoy = r.fechaRegistro === HOY;
 
@@ -942,8 +906,14 @@ function RegistroCard({ r, onEditar, onEliminar }) {
    ══════════════════════════════════════════════════ */
 export default function LiderVueloPage() {
   /* ── Datos base ─────────────────────────────────── */
-  const { data: pageData } = useVuelos({ page: 0, size: 200 });
-  const vuelos = pageData?.content ?? [];
+  // const { data: pageData } = useVuelos({ page: 0, size: 200 });
+  // const vuelos = pageData?.content ?? [];
+
+  const { data: vuelosHoy } = useItinerarioHoy();
+  const vuelos = vuelosHoy ?? [];
+
+  // const HOY = new Date().toISOString().slice(0, 10);
+  const HOY = hoyEnLima();
 
   /* Proveedores — se cargan INDEPENDIENTEMENTE del vuelo */
   const { data: hotelesPage } = useProveedores({
@@ -961,9 +931,6 @@ export default function LiderVueloPage() {
     page: 0,
     size: 50,
   });
-  //const hoteles = hotelesPage?.content ?? [];
-  //const transportes = transportesPage?.content ?? [];
-  //const restaurantes = restaurantesPage?.content ?? [];
 
   const hoteles = (hotelesPage?.content ?? []).filter((p) => p.estado === 1);
   const transportes = (transportesPage?.content ?? []).filter(
@@ -1012,33 +979,23 @@ export default function LiderVueloPage() {
   });
   const [confirm, setConfirm] = useState({ open: false, id: null });
 
+  // Camino B: mapa de capacidad comprometida hoy por proveedor.
+  // En edicion se excluye el propio registro para evitar doble conteo.
+  const { data: comprometidoHoy = new Map() } = useCapacidadComprometidaHoy(
+    editId ?? null,
+  );
+
   /*
    ***Proveedores ya asignados en registros de HOY.
    ***Si estamos editando un registro, sus propios proveedores no se excluyen
    ***(El Líder debe poder verlos y modificarlos)
    */
 
-  const proveedoresYaUsados = useMemo(() => {
-    const ids = new Set();
-    registrosHoy.forEach((r) => {
-      if (editId && r.id === editId) return; // no excluir los del registro en edición
-      r.recursos?.forEach((rec) => {
-        if (rec.proveedorId) ids.add(Number(rec.proveedorId));
-      });
-    });
-    return ids;
-  }, [registrosHoy, editId]);
-
-  // Listas filtradas — solo proveedores activos Y sin asignar a otro vuelo hoy
-  const hotelesDisponibles = hoteles.filter(
-    (h) => !proveedoresYaUsados.has(Number(h.id)),
-  );
-  const transportesDisponibles = transportes.filter(
-    (t) => !proveedoresYaUsados.has(Number(t.id)),
-  );
-  const restaurantesDisponibles = restaurantes.filter(
-    (r) => !proveedoresYaUsados.has(Number(r.id)),
-  );
+  // Camino B: todos los proveedores activos son visibles.
+  // El combo muestra cuanto ya esta comprometido hoy via comprometidoHoy.
+  const hotelesDisponibles = hoteles;
+  const transportesDisponibles = transportes;
+  const restaurantesDisponibles = restaurantes;
 
   // IDs de vuelos que ya tienen registro guardado hoy
   const vuelosYaRegistrados = useMemo(() => {
@@ -1078,10 +1035,6 @@ export default function LiderVueloPage() {
     setEditId(null);
     setErrors({});
   }, [vueloSelId]);
-
-  /* ── Helpers de recursos ── */
-  //const setR = (k, v) => setRec((r) => ({ ...r, [k]: v }));
-  /* ── CAMBIO 4: helpers para arrays de recursos ── */
 
   /* Actualiza un campo de un item dentro de hoteles/transportes/restaurantes */
   const setHotel = (idx, field, val) =>
@@ -1419,6 +1372,7 @@ export default function LiderVueloPage() {
                     placeholder="Sin hotel asignado"
                     icon={Hotel}
                     accentColor="#16a34a"
+                    comprometidoHoy={comprometidoHoy} // ← agregar
                   />
                   {h.hotelId && (
                     <div className={styles.habGrid}>
@@ -1499,6 +1453,7 @@ export default function LiderVueloPage() {
                   placeholder="Sin transporte asignado"
                   icon={Bus}
                   accentColor="#3b82f6"
+                  comprometidoHoy={comprometidoHoy} // ← agregar
                 />
                 {t.transporteId && (
                   <div className={styles.field}>
@@ -1561,6 +1516,7 @@ export default function LiderVueloPage() {
                   placeholder="Sin restaurante asignado"
                   icon={UtensilsCrossed}
                   accentColor="#f97316"
+                  comprometidoHoy={comprometidoHoy} // ← agregar
                 />
                 {rt.restauranteId && (
                   <div className={styles.field}>
@@ -1653,6 +1609,7 @@ export default function LiderVueloPage() {
             <RegistroCard
               key={r.id}
               r={r}
+              hoy={HOY} // ← agregar esta línea en los 3 lugares
               onEditar={handleEditar}
               onEliminar={(id) => setConfirm({ open: true, id })}
             />
@@ -1692,6 +1649,7 @@ export default function LiderVueloPage() {
                         <RegistroCard
                           key={r.id}
                           r={r}
+                          hoy={HOY} // ← agregar esta línea en los 3 lugares
                           onEditar={handleEditar}
                           onEliminar={(id) => setConfirm({ open: true, id })}
                         />

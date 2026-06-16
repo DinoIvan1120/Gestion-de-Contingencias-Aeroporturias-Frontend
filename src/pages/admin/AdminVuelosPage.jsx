@@ -96,6 +96,8 @@ export default function AdminVuelosPage() {
   // ── Estado formulario CRUD ─────────────────────────────────────────────────
   const [formOpen, setFormOpen] = useState(false);
   const [editId, setEditId] = useState(null);
+  // Fecha original al abrir editar: permite conservar la fecha aunque sea pasada.
+  const [originalFechaVuelo, setOriginalFechaVuelo] = useState("");
   const [form, setForm] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState({});
 
@@ -117,6 +119,18 @@ export default function AdminVuelosPage() {
     title: "",
     message: "",
   });
+
+  /**
+   * Modal de errores de carga masiva.
+   * Muestra la lista de filas que no pudieron importarse
+   * sin interrumpir los registros que sí se crearon.
+   */
+  const [errorModal, setErrorModal] = useState({
+    open: false,
+    registrados: 0,
+    errores: [],
+  });
+
   //const [confirm, setConfirm] = useState({ open: false, id: null, codigo: "" });
   // const [dragging, setDragging] = useState(false);
   // const fileRef = useRef(null);
@@ -145,6 +159,7 @@ export default function AdminVuelosPage() {
   // ── Handlers CRUD ──────────────────────────────────────────────────────────
   const abrirCrear = () => {
     setEditId(null);
+    setOriginalFechaVuelo("");
     setForm(EMPTY_FORM);
     setErrors({});
     setFormOpen(true);
@@ -152,6 +167,7 @@ export default function AdminVuelosPage() {
 
   const abrirEditar = (v) => {
     setEditId(v.id);
+    setOriginalFechaVuelo(v.fechaVuelo ?? "");
     setForm({
       aerolinea: v.aerolinea ?? "",
       codigoVuelo: v.codigoVuelo ?? "",
@@ -183,6 +199,22 @@ export default function AdminVuelosPage() {
     else if (!/^[A-Za-z]{3}$/.test(form.destino.trim()))
       err.destino = "Código IATA: 3 letras";
     if (!form.fechaVuelo) err.fechaVuelo = "La fecha es requerida";
+    const hoy = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Lima",
+    }).format(new Date());
+    if (!editId && form.fechaVuelo && form.fechaVuelo < hoy) {
+      // CREAR: nunca fechas pasadas
+      err.fechaVuelo = "No puedes registrar un vuelo con fecha anterior a hoy";
+    } else if (
+      editId &&
+      form.fechaVuelo &&
+      form.fechaVuelo < hoy &&
+      form.fechaVuelo !== originalFechaVuelo
+    ) {
+      // EDITAR: conservar la fecha original (aunque sea pasada) está bien.
+      // Cambiarla a OTRA fecha pasada está bloqueado.
+      err.fechaVuelo = "No puedes cambiar la fecha a un día anterior a hoy";
+    }
     if (!form.tipoContingencia)
       err.tipoContingencia = "El tipo de contingencia es requerido";
     return err;
@@ -229,6 +261,16 @@ export default function AdminVuelosPage() {
     }
   };
 
+  /**
+   * Procesa el archivo Excel.
+   *
+   * El backend retorna:
+   *   { registrados: VueloResponse[], errores: string[] }
+   *
+   * Si hay errores se abre el modal dedicado que lista cada fila fallida.
+   * Si todo fue correcto se muestra el InfoModal de éxito habitual.
+   */
+
   const handleFile = async (file) => {
     if (!file) return;
     if (!file.name.endsWith(".xlsx"))
@@ -241,11 +283,24 @@ export default function AdminVuelosPage() {
     fd.append("archivo", file);
     try {
       const { data } = await cargaMasiva.mutateAsync(fd);
-      showModal(
-        "success",
-        "Carga exitosa",
-        `Vuelos importados correctamente. ${data?.data?.registros ?? ""} registros procesados.`,
-      );
+      const resultado = data?.data;
+      const totalReg = resultado?.registrados?.length ?? 0;
+      const listaErrores = resultado?.errores ?? [];
+      if (listaErrores.length > 0) {
+        // Hay errores parciales → modal específico
+        setErrorModal({
+          open: true,
+          registrados: totalReg,
+          errores: listaErrores,
+        });
+      } else {
+        // Todo OK
+        showModal(
+          "success",
+          "Carga exitosa",
+          `${totalReg} vuelo(s) importado(s) correctamente.`,
+        );
+      }
     } catch (err) {
       showModal(
         "error",
@@ -734,6 +789,65 @@ export default function AdminVuelosPage() {
               <Upload size={16} /> Procesando archivo...
             </div>
           )}
+        </div>
+      </Modal>
+
+      {/* ── Modal de errores de carga masiva ── */}
+      <Modal
+        open={errorModal.open}
+        onClose={() => setErrorModal((m) => ({ ...m, open: false }))}
+        title="Resultado de la carga"
+        size="md"
+      >
+        <div className={styles.errorModalBody}>
+          {/* Banner resumen */}
+          <div className={styles.errorBanner}>
+            <div className={styles.errorBannerIcon}>⚠️</div>
+            <div className={styles.errorBannerText}>
+              <p className={styles.errorBannerTitle}>
+                Carga completada con advertencias
+              </p>
+              <p className={styles.errorBannerSub}>
+                Algunos registros no pudieron importarse. Revisa los detalles y
+                corrige el archivo para volver a intentarlo.
+              </p>
+            </div>
+          </div>
+
+          {/* Chips de estadísticas */}
+          <div className={styles.errorStats}>
+            <span className={styles.statChip + " " + styles.statChipOk}>
+              ✓ &nbsp;{errorModal.registrados} importado
+              {errorModal.registrados !== 1 ? "s" : ""}
+            </span>
+            <span className={styles.statChip + " " + styles.statChipErr}>
+              ✕ &nbsp;{errorModal.errores.length} con error
+            </span>
+          </div>
+
+          {/* Lista de errores por fila */}
+          <div className={styles.errorListSection}>
+            <span className={styles.errorListLabel}>Filas no registradas</span>
+            <div className={styles.errorScrollArea}>
+              <ul className={styles.errorList}>
+                {errorModal.errores.map((e, i) => (
+                  <li key={i} className={styles.errorItem}>
+                    <span className={styles.errorItemDot} />
+                    {e}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* Acción */}
+          <div className={styles.errorModalActions}>
+            <Button
+              onClick={() => setErrorModal((m) => ({ ...m, open: false }))}
+            >
+              Entendido
+            </Button>
+          </div>
         </div>
       </Modal>
 

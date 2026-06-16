@@ -80,3 +80,32 @@ export function useEliminarRegistro() {
     },
   });
 }
+
+/**
+ * Trae el mapa de capacidad comprometida hoy: { proveedorId -> info }.
+ *
+ * Se usa para decorar el ProveedorCombobox con la info de "ya asignado hoy".
+ * Un proveedor que no aparece en el mapa no tiene nada comprometido = libre.
+ *
+ * excludeRegistroId: cuando el lider edita un registro existente, se pasa
+ * su id para que sus propios recursos no se cuenten como "ya comprometidos".
+ *
+ * staleTime = 0 para que siempre refleje el estado mas reciente del dia.
+ * Se invalida automaticamente cuando se guarda/actualiza/elimina un registro.
+ */
+export function useCapacidadComprometidaHoy(excludeRegistroId = null) {
+  return useQuery({
+    queryKey: ["registros-diarios", "comprometido-hoy", excludeRegistroId],
+    queryFn: async () => {
+      const { data } =
+        await registrosDiariosApi.comprometidoHoy(excludeRegistroId);
+      // data.data = { "1": {...}, "2": {...} } — claves son strings desde JSON
+      // Convertimos a Map<number, objeto> para facilitar lookups con Number(proveedorId)
+      const raw = data.data ?? {};
+      const map = new Map();
+      Object.entries(raw).forEach(([k, v]) => map.set(Number(k), v));
+      return map;
+    },
+    staleTime: 0,
+  });
+}

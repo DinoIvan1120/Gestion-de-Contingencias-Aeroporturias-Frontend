@@ -123,22 +123,6 @@ export function useAnularAtencion() {
   });
 }
 
-// export function useAsignarServicios(atencionId) {
-//   const qc = useQueryClient();
-//   return useMutation({
-//     mutationFn: (servicios) =>
-//       atencionesApi.asignarServicios(atencionId, servicios),
-//     onSuccess: () => qc.invalidateQueries({ queryKey: ATENCIONES_KEY }),
-//   });
-// }
-
-/** POST /atenciones/{id}/pdf */
-// export function useGenerarPdf() {
-//   return useMutation({
-//     mutationFn: (id) => atencionesApi.generarPdf(id),
-//   });
-// }
-
 /** POST /atenciones/{id}/voucher/generar — solo genera PDF y sube a S3 */
 export function useGenerarPdf() {
   return useMutation({

@@ -173,6 +173,7 @@ const SECTION_TITLE = {
 function buildPayload(form, campos) {
   const base = {
     nombre: form.nombre,
+    ruc: form.ruc, // ← añadir
     direccion: form.direccion,
     telefono: form.telefono,
     correo: form.correo,
@@ -481,7 +482,7 @@ export default function AdminProveedoresPage() {
               error={errors.ruc}
               placeholder="20XXXXXXXXX"
               maxLength={11}
-              disabled={!!editId}
+              // disabled={!!editId}
             />
             <Input
               label="Teléfono"

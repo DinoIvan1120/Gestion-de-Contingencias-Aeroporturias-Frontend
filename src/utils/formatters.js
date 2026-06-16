@@ -12,7 +12,7 @@ export function formatearFecha(fecha) {
   // Si ya trae zona (contiene + o Z), no modificar
   const raw =
     typeof fecha === "string" && !fecha.includes("Z") && !fecha.includes("+")
-      ? fecha + "Z" // forzar UTC
+      ? fecha + "-05:00" // offset Lima — el backend ya guarda hora Lima
       : fecha;
   return new Intl.DateTimeFormat("es-PE", {
     day: "2-digit",

@@ -35,6 +35,17 @@ const registrosDiariosApi = {
   getDisponibilidad: (id) => axiosClient.get(`${BASE}/${id}/disponibilidad`),
   /** GET /registros-diarios/{id}/atenciones */
   getAtenciones: (id) => axiosClient.get(`${BASE}/${id}/atenciones`),
+
+  /**
+   * GET /registros-diarios/comprometido-hoy
+   * Mapa { proveedorId: CapacidadComprometidaResponse } con la capacidad
+   * ya asignada hoy por proveedor. excludeRegistroId (opcional) se pasa
+   * en modo edicion para no contar los recursos del propio registro.
+   */
+  comprometidoHoy: (excludeRegistroId = null) =>
+    axiosClient.get(`${BASE}/comprometido-hoy`, {
+      params: excludeRegistroId ? { excludeRegistroId } : {},
+    }),
 };
 
 export default registrosDiariosApi;

@@ -256,7 +256,7 @@ export default function AuditoriaPage() {
             <label className={styles.filtroLabel}>Fecha desde</label>
             <input
               type="date"
-              className={styles.filtroInput}
+              className={styles.filtroInputPlain}
               value={filtros.fechaDesde}
               onChange={(e) => setF("fechaDesde", e.target.value)}
             />
@@ -267,7 +267,7 @@ export default function AuditoriaPage() {
             <label className={styles.filtroLabel}>Fecha hasta</label>
             <input
               type="date"
-              className={styles.filtroInput}
+              className={styles.filtroInputPlain}
               value={filtros.fechaHasta}
               onChange={(e) => setF("fechaHasta", e.target.value)}
             />

@@ -722,3 +722,51 @@
 .modalBtnError:hover {
   background: #b91c1c !important;
 }
+
+/*
+ * LoginPage.module.css — ADICIÓN
+ *
+ * Pega estos estilos al final de tu LoginPage.module.css existente.
+ * No modifica ninguna clase ya definida.
+ */
+
+/* ── Toggle modo login: Correo / DNI ─────────────────────────────────────── */
+.modeToggle {
+  display: flex;
+  gap: 0;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #dce4f0;
+  background: #eef1f7;
+}
+
+.modeBtn {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: #7485a0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    color 0.2s;
+  white-space: nowrap;
+}
+
+.modeBtn:first-child {
+  border-right: 1px solid #dce4f0;
+}
+
+.modeBtnActive {
+  background: #fff;
+  color: #0b1f4e;
+}
+
+.modeBtn:hover:not(.modeBtnActive) {
+  background: #e8ecf4;
+  color: #3d5070;
+}

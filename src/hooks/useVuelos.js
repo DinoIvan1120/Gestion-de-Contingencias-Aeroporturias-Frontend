@@ -97,11 +97,43 @@ export function useHabilitarVuelo() {
   });
 }
 
+/**
+ * Carga masiva desde Excel.
+ *
+ * El backend ahora retorna { registrados: [...], errores: [...] }.
+ * El hook expone el resultado completo para que la página pueda
+ * mostrar el modal de errores cuando corresponda.
+ *
+ * Firma de respuesta esperada:
+ *   data.data = { registrados: VueloResponse[], errores: string[] }
+ */
 export function useCargaMasiva() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (formData) => vuelosApi.cargaMasiva(formData),
     onSuccess: () => qc.invalidateQueries({ queryKey: VUELOS_KEY }),
+  });
+}
+
+/**
+ * Trae los vuelos ACTIVOS cuya fechaVuelo = hoy en Lima (UTC-5).
+ * Alimenta el combo del itinerario del líder.
+ *
+ * staleTime: 5 min — el itinerario del día no cambia con frecuencia;
+ * si el admin carga nuevos vuelos, el líder puede refrescar manualmente
+ * o esperar el próximo ciclo de invalidación.
+ * refetchOnWindowFocus: true — si el líder cambia de tab y vuelve,
+ * se refresca para capturar nuevos vuelos cargados por el admin.
+ */
+export function useItinerarioHoy() {
+  return useQuery({
+    queryKey: ["vuelos", "itinerario-hoy"],
+    queryFn: async () => {
+      const { data } = await vuelosApi.itinerarioHoy();
+      return data.data; // List<VueloResponse>
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    refetchOnWindowFocus: true,
   });
 }
 

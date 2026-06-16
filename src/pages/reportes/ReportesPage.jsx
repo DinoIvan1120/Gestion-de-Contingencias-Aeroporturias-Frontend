@@ -7,6 +7,8 @@ import {
   ChevronRight,
   SlidersHorizontal,
   Info,
+  Search,
+  X,
 } from "lucide-react";
 import { useReportes, useExportarExcel } from "../../hooks/useReportes";
 import { useNavigate } from "react-router-dom";
@@ -189,47 +191,67 @@ export default function ReportesPage() {
         </div>
       )}
 
-      {/* Filtros */}
+      {/* ── Panel de filtros colapsable ── */}
       <div
         className={[
           styles.filterPanel,
           filtrosOpen ? styles.filterPanelOpen : "",
         ].join(" ")}
       >
-        <h2 className={styles.sectionTitle}>Filtros de búsqueda</h2>
-        <div className={styles.filtrosGrid}>
-          {[
-            {
-              name: "correlativo",
-              label: "Correlativo",
-              placeholder: "SGC-000001001",
-            },
-            { name: "pnr", label: "PNR", placeholder: "ABC123" },
-            {
-              name: "nombrePasajero",
-              label: "Pasajero",
-              placeholder: "Nombre del pasajero",
-            },
-          ].map(({ name, label, placeholder }) => (
-            <div key={name} className={styles.filtroField}>
-              <label className={styles.filtroLabel}>{label}</label>
+        <div className={styles.filterGrid}>
+          {/* Correlativo */}
+          <div className={styles.filterField}>
+            <label className={styles.filterLabel}>Correlativo</label>
+            <div className={styles.filterInputWrap}>
+              <Search size={14} className={styles.filterInputIcon} />
               <input
-                name={name}
-                value={filtros[name]}
+                name="correlativo"
+                value={filtros.correlativo}
                 onChange={handleFiltroChange}
-                placeholder={placeholder}
-                className={styles.filtroInput}
+                placeholder="SGC-000001001"
+                className={styles.filterInput}
               />
             </div>
-          ))}
+          </div>
 
-          <div className={styles.filtroField}>
-            <label className={styles.filtroLabel}>Vuelo</label>
+          {/* PNR */}
+          <div className={styles.filterField}>
+            <label className={styles.filterLabel}>PNR</label>
+            <div className={styles.filterInputWrap}>
+              <Search size={14} className={styles.filterInputIcon} />
+              <input
+                name="pnr"
+                value={filtros.pnr}
+                onChange={handleFiltroChange}
+                placeholder="ABC123"
+                className={styles.filterInput}
+              />
+            </div>
+          </div>
+
+          {/* Pasajero */}
+          <div className={styles.filterField}>
+            <label className={styles.filterLabel}>Pasajero</label>
+            <div className={styles.filterInputWrap}>
+              <Search size={14} className={styles.filterInputIcon} />
+              <input
+                name="nombrePasajero"
+                value={filtros.nombrePasajero}
+                onChange={handleFiltroChange}
+                placeholder="Nombre del pasajero"
+                className={styles.filterInput}
+              />
+            </div>
+          </div>
+
+          {/* Vuelo */}
+          <div className={styles.filterField}>
+            <label className={styles.filterLabel}>Vuelo</label>
             <select
               name="vueloId"
               value={filtros.vueloId}
               onChange={handleFiltroChange}
-              className={styles.filtroSelect}
+              className={styles.filterSelect}
             >
               <option value="">Todos</option>
               {vuelos.map((v) => (
@@ -240,16 +262,16 @@ export default function ReportesPage() {
             </select>
           </div>
 
-          {/* Filtros Hotel/Transporte/Restaurante: ocultos para proveedor */}
+          {/* Hotel / Transporte / Restaurante: solo roles internos */}
           {!esProveedor && (
             <>
-              <div className={styles.filtroField}>
-                <label className={styles.filtroLabel}>Hotel</label>
+              <div className={styles.filterField}>
+                <label className={styles.filterLabel}>Hotel</label>
                 <select
                   name="hotelId"
                   value={filtros.hotelId}
                   onChange={handleFiltroChange}
-                  className={styles.filtroSelect}
+                  className={styles.filterSelect}
                 >
                   <option value="">Todos</option>
                   {hoteles.map((h) => (
@@ -259,13 +281,13 @@ export default function ReportesPage() {
                   ))}
                 </select>
               </div>
-              <div className={styles.filtroField}>
-                <label className={styles.filtroLabel}>Transporte</label>
+              <div className={styles.filterField}>
+                <label className={styles.filterLabel}>Transporte</label>
                 <select
                   name="transporteId"
                   value={filtros.transporteId}
                   onChange={handleFiltroChange}
-                  className={styles.filtroSelect}
+                  className={styles.filterSelect}
                 >
                   <option value="">Todos</option>
                   {transportes.map((t) => (
@@ -275,13 +297,13 @@ export default function ReportesPage() {
                   ))}
                 </select>
               </div>
-              <div className={styles.filtroField}>
-                <label className={styles.filtroLabel}>Restaurante</label>
+              <div className={styles.filterField}>
+                <label className={styles.filterLabel}>Restaurante</label>
                 <select
                   name="restauranteId"
                   value={filtros.restauranteId}
                   onChange={handleFiltroChange}
-                  className={styles.filtroSelect}
+                  className={styles.filterSelect}
                 >
                   <option value="">Todos</option>
                   {restaurantes.map((r) => (
@@ -294,34 +316,39 @@ export default function ReportesPage() {
             </>
           )}
 
-          <div className={styles.filtroField}>
-            <label className={styles.filtroLabel}>Fecha desde</label>
+          {/* Fecha desde */}
+          <div className={styles.filterField}>
+            <label className={styles.filterLabel}>Fecha desde</label>
             <input
               type="date"
               name="fechaDesde"
               value={filtros.fechaDesde}
               onChange={handleFiltroChange}
-              className={styles.filtroInput}
+              className={styles.filterInputPlain}
             />
           </div>
-          <div className={styles.filtroField}>
-            <label className={styles.filtroLabel}>Fecha hasta</label>
+
+          {/* Fecha hasta */}
+          <div className={styles.filterField}>
+            <label className={styles.filterLabel}>Fecha hasta</label>
             <input
               type="date"
               name="fechaHasta"
               value={filtros.fechaHasta}
               onChange={handleFiltroChange}
-              className={styles.filtroInput}
+              className={styles.filterInputPlain}
             />
           </div>
         </div>
-        <div className={styles.filtrosActions}>
-          <Button variant="secondary" size="sm" onClick={handleLimpiar}>
-            Limpiar
-          </Button>
-          <Button size="sm" onClick={handleBuscar}>
-            Buscar
-          </Button>
+
+        {/* Acciones del filtro */}
+        <div className={styles.filterActions}>
+          <button className={styles.filterClearBtn} onClick={handleLimpiar}>
+            <X size={14} /> Limpiar
+          </button>
+          <button className={styles.filterSearchBtn} onClick={handleBuscar}>
+            <Search size={14} /> Buscar
+          </button>
         </div>
       </div>
 

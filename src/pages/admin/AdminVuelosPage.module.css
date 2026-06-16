@@ -506,6 +506,165 @@ cambio
   min-width: 0; /* evita overflow del texto */
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   Modal de errores — Carga masiva parcial
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.errorModalBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 0.25rem 0 0.5rem;
+}
+
+/* Banner superior: ícono + resumen de registros */
+.errorBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  background: linear-gradient(135deg, #fff7ed 0%, #fef3c7 100%);
+  border: 1px solid #fed7aa;
+  border-radius: var(--r-md, 10px);
+  padding: 1rem 1.25rem;
+}
+
+.errorBannerIcon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1.5px solid #f97316;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+.errorBannerText {
+  flex: 1;
+  min-width: 0;
+}
+
+.errorBannerTitle {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #92400e;
+  margin: 0 0 0.3rem;
+}
+
+.errorBannerSub {
+  font-size: 0.82rem;
+  color: #b45309;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Chips de estadísticas: registrados / errores */
+.errorStats {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.statChip {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.statChipOk {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.statChipErr {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+/* Sección de lista de errores */
+.errorListSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.errorListLabel {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-500, #6b7280);
+}
+
+.errorScrollArea {
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: var(--r-md, 10px);
+  background: var(--bg, #f9fafb);
+}
+
+.errorScrollArea::-webkit-scrollbar {
+  width: 6px;
+}
+.errorScrollArea::-webkit-scrollbar-track {
+  background: transparent;
+}
+.errorScrollArea::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+.errorList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.errorItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.7rem 1rem;
+  font-size: 0.83rem;
+  color: var(--text-700, #374151);
+  line-height: 1.55;
+  border-bottom: 1px solid var(--border, #e5e7eb);
+  transition: background 0.12s ease;
+}
+
+.errorItem:last-child {
+  border-bottom: none;
+}
+.errorItem:hover {
+  background: #fff;
+}
+
+.errorItemDot {
+  flex-shrink: 0;
+  margin-top: 0.35rem;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f87171;
+}
+
+/* Acciones del modal */
+.errorModalActions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 0.25rem;
+}
+
 /* Responsive */
 @media (max-width: 600px) {
   .headerActions {

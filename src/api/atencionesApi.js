@@ -22,7 +22,6 @@ const atencionesApi = {
 
   /** POST /atenciones/batch */
   createBatch: (body) => axiosClient.post(`${BASE}/batch`, body),
-  create: (body) => axiosClient.post(BASE, body),
   batch: (body) => axiosClient.post(`${BASE}/batch`, body),
   update: (id, body) => axiosClient.put(`${BASE}/${id}`, body),
   anular: (id) => axiosClient.patch(`${BASE}/${id}/anular`),

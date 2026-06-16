@@ -94,7 +94,7 @@ export function AuthProvider({ children }) {
     (data) => {
       const { token: t, expiresIn, ...userData } = data;
       //const expiresAt = Date.now() + (expiresIn ?? 86_400_000);
-      const expiresAt = Date.now() + (expiresIn ?? 120_000);
+      const expiresAt = Date.now() + (expiresIn ?? 86_400_000);
 
       setToken(t);
       setUser(userData);
@@ -112,8 +112,7 @@ export function AuthProvider({ children }) {
       if (!data?.token) throw new Error("Sin token en respuesta");
 
       const { token: newToken, expiresIn, ...userData } = data;
-      //const expiresAt = Date.now() + (expiresIn ?? 86_400_000);
-      const expiresAt = Date.now() + (expiresIn ?? 120_000);
+      const expiresAt = Date.now() + (expiresIn ?? 86_400_000);
 
       setToken(newToken);
       setUser(userData);

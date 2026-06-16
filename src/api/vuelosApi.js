@@ -4,6 +4,13 @@ const BASE = "/api/v1/vuelos";
 
 const vuelosApi = {
   getAll: (params) => axiosClient.get(BASE, { params }),
+  /**
+   * GET /vuelos/itinerario-hoy
+   * Devuelve solo los vuelos ACTIVOS con fechaVuelo = hoy (Lima UTC-5).
+   * Usado por la vista del líder para mostrar el itinerario del día.
+   * "Hoy" lo calcula el servidor — no hay que enviar ningún parámetro.
+   */
+  itinerarioHoy: () => axiosClient.get(`${BASE}/itinerario-hoy`),
   getById: (id) => axiosClient.get(`${BASE}/${id}`),
   /** GET /vuelos/buscar — búsqueda dinámica con filtros opcionales */
   buscar: (params) => axiosClient.get(`${BASE}/buscar`, { params }),
