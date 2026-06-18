@@ -1291,6 +1291,12 @@ function FormularioAtencion({ registro, onVolver }) {
               variant={BADGE_MAP[v?.tipoContingencia] ?? "neutral"}
             />
           </div>
+          <div>
+            <span className={styles.ivLabel}>Obs. Vuelo:</span>{" "}
+            <span className={styles.ivVal}>
+              {v?.observaciones ? v.observaciones : "—"}
+            </span>
+          </div>
         </div>
       </div>
 
