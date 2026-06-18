@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useRegistrosHoy } from "../../hooks/useRegistrosDiarios";
 import { useWebSocket } from "../../context/WebSocketContext"; // FIX #2
+import { hoyEnLima } from "../../utils/dateUtils.js";
 import {
   useAtencionesRegistro,
   useDisponibilidad,
@@ -46,7 +47,10 @@ const BADGE_MAP = {
   REPROGRAMADO: "warning",
   PROGRAMADO: "info",
 };
-const HOY = new Date().toISOString().slice(0, 10);
+const HOY = hoyEnLima(); // Fix: antes usaba new Date().
+//toISOString().slice(0,10) (UTC),
+// lo que adelantaba la fecha desde las 19:00 hora Lima (UTC-5). Ahora respeta America/Lima.
+// const HOY = new Date().toISOString().slice(0, 10);
 // const EMPTY_PX = { nombre: "", apellido: "", pnr: "", correo: "" };
 
 const EMPTY_SV = {
